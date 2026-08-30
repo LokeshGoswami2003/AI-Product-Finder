@@ -1,0 +1,344 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Single-instance production infrastructure for AI Product Finder
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ai-product-finder
+    AllowedPattern: '[a-z0-9-]+'
+  EnvironmentName:
+    Type: String
+    Default: production
+    AllowedPattern: '[a-z0-9-]+'
+  DomainName:
+    Type: String
+    Default: samvad.space
+  GitHubOwner:
+    Type: String
+    Default: LokeshGoswami2003
+  GitHubRepository:
+    Type: String
+    Default: AI-Product-Finder
+  GitHubBranch:
+    Type: String
+    Default: main
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues:
+      - t3.small
+  BackendEnvironmentParameterName:
+    Type: String
+    Default: /ai-product-finder/production/backend-env
+  ExistingGitHubOidcProviderArn:
+    Type: String
+    Default: ''
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Conditions:
+  CreateGitHubOidcProvider: !Equals [!Ref ExistingGitHubOidcProviderArn, '']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateGitHubOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  DeploymentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: !Sub '${ProjectName}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}'
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldReleases
+            Prefix: releases/
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  DeploymentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DeploymentBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt DeploymentBucket.Arn
+              - !Sub '${DeploymentBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Public HTTP and HTTPS for AI Product Finder
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP for ACME and HTTPS redirect
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS application traffic
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
+          Description: Package, AWS API, and OpenRouter access
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${EnvironmentName}'
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${EnvironmentName}-instance'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: ReadDeploymentArtifactsAndEnvironment
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource: !Sub '${DeploymentBucket.Arn}/releases/*'
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DeploymentBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix: releases/*
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource: !Sub
+                  - 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterName}'
+                  - ParameterName: !Ref BackendEnvironmentParameterName
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub '${ProjectName}-${EnvironmentName}'
+      Roles:
+        - !Ref InstanceRole
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+        HttpPutResponseHopLimit: 1
+        InstanceMetadataTags: enabled
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: 20
+            VolumeType: gp3
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf update -y
+          dnf install -y nginx tar gzip unzip python3 amazon-cloudwatch-agent
+          if ! command -v aws >/dev/null 2>&1; then
+            curl --fail --silent --show-error \
+              https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip \
+              --output /tmp/awscliv2.zip
+            unzip -q /tmp/awscliv2.zip -d /tmp
+            /tmp/aws/install --update
+            rm -rf /tmp/aws /tmp/awscliv2.zip
+          fi
+          mkdir -p \
+            /opt/${ProjectName}/releases \
+            /etc/${ProjectName} \
+            /var/www/letsencrypt
+          chmod 700 /etc/${ProjectName}
+          systemctl enable amazon-ssm-agent
+          systemctl restart amazon-ssm-agent
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${EnvironmentName}'
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: DeploymentGroup
+          Value: !Sub '${ProjectName}-${EnvironmentName}'
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${EnvironmentName}'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ElasticIpAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt ElasticIp.AllocationId
+      InstanceId: !Ref Instance
+
+  ApplicationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/${ProjectName}/${EnvironmentName}/application'
+      RetentionInDays: 14
+
+  NginxLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/${ProjectName}/${EnvironmentName}/nginx'
+      RetentionInDays: 14
+
+  InstanceStatusAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: EC2 instance or system status check failed
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref Instance
+      EvaluationPeriods: 2
+      MetricName: StatusCheckFailed
+      Namespace: AWS/EC2
+      Period: 60
+      Statistic: Maximum
+      Threshold: 1
+      TreatMissingData: missing
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${EnvironmentName}-github-actions'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateGitHubOidcProvider
+                - !Ref GitHubOidcProvider
+                - !Ref ExistingGitHubOidcProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub >-
+                  repo:${GitHubOwner}/${GitHubRepository}:ref:refs/heads/${GitHubBranch}
+      Policies:
+        - PolicyName: DeployRelease
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub '${DeploymentBucket.Arn}/releases/*'
+              - Effect: Allow
+                Action: ssm:SendCommand
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript'
+                  - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Instance}'
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                  - ssm:CancelCommand
+                Resource: '*'
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  DeploymentBucketName:
+    Value: !Ref DeploymentBucket
+  DomainName:
+    Value: !Ref DomainName
+  ElasticIpAllocationId:
+    Value: !GetAtt ElasticIp.AllocationId
+  GitHubActionsRoleArn:
+    Value: !GetAtt GitHubActionsRole.Arn
+  InstanceId:
+    Value: !Ref Instance
+  PublicIp:
+    Value: !Ref ElasticIp
+  SsmSessionCommand:
+    Value: !Sub 'aws ssm start-session --region ${AWS::Region} --target ${Instance}'

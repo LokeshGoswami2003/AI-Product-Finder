@@ -1,0 +1,135 @@
+name: Validate and deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            Backend/package-lock.json
+            Frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci --prefix Backend
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix Frontend
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run retrieval benchmark
+        run: npm run benchmark:retrieval
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build corpus release
+        run: npm run ingest
+
+      - name: Create deployment bundle
+        run: bash deploy/scripts/create-release-bundle.sh "release-${GITHUB_SHA}.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: production-release
+          path: release-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: production-release
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Upload release
+        env:
+          BUCKET: ${{ vars.DEPLOYMENT_BUCKET }}
+        run: >-
+          aws s3 cp
+          "release-${GITHUB_SHA}.tar.gz"
+          "s3://${BUCKET}/releases/${GITHUB_SHA}.tar.gz"
+          --only-show-errors
+
+      - name: Deploy through Systems Manager
+        timeout-minutes: 25
+        env:
+          BACKEND_ENV_PARAMETER: ${{ vars.BACKEND_ENV_PARAMETER }}
+          BUCKET: ${{ vars.DEPLOYMENT_BUCKET }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+          REGION: ${{ vars.AWS_REGION }}
+        run: |
+          command_text=$(cat <<EOF
+          set -euo pipefail
+          work_dir=\$(mktemp -d)
+          aws s3 cp "s3://${BUCKET}/releases/${GITHUB_SHA}.tar.gz" "\${work_dir}/release.tar.gz" --region "${REGION}" --only-show-errors
+          tar -xzf "\${work_dir}/release.tar.gz" -C "\${work_dir}" deploy/scripts/install-release.sh
+          bash "\${work_dir}/deploy/scripts/install-release.sh" "${BUCKET}" "releases/${GITHUB_SHA}.tar.gz" "${GITHUB_SHA}" "${DOMAIN_NAME}" "${BACKEND_ENV_PARAMETER}" "${REGION}"
+          rm -rf "\${work_dir}"
+          EOF
+          )
+          jq -n --arg command "${command_text}" '{commands: [$command]}' > ssm-parameters.json
+          command_id=$(aws ssm send-command \
+            --instance-ids "${INSTANCE_ID}" \
+            --document-name AWS-RunShellScript \
+            --comment "Deploy ${GITHUB_SHA}" \
+            --parameters file://ssm-parameters.json \
+            --query Command.CommandId \
+            --output text)
+          deadline=$((SECONDS + 1200))
+          status=""
+          while (( SECONDS < deadline )); do
+            status=$(aws ssm get-command-invocation \
+              --command-id "${command_id}" \
+              --instance-id "${INSTANCE_ID}" \
+              --query Status \
+              --output text 2>/dev/null || true)
+            case "${status}" in
+              Success|Cancelled|TimedOut|Failed|Cancelling)
+                break
+                ;;
+            esac
+            sleep 5
+          done
+          if [[ "${status}" != "Success" ]]; then
+            if [[ -z "${status}" || "${status}" == "Pending" || "${status}" == "InProgress" || "${status}" == "Delayed" ]]; then
+              aws ssm cancel-command --command-id "${command_id}" >/dev/null
+            fi
+          fi
+          aws ssm get-command-invocation \
+            --command-id "${command_id}" \
+            --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'
+          [[ "${status}" == "Success" ]]

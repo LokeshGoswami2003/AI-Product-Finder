@@ -1,0 +1,185 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17211b;
+  background: #f4f6f1;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; min-height: 100%; scroll-behavior: smooth; }
+body, #root { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+a { color: #006c45; }
+:focus-visible { outline: 3px solid #e3a90a; outline-offset: 3px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.loading-page, .access-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.access-page {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(220, 239, 224, .9), transparent 34%),
+    linear-gradient(145deg, #f8faf5 0%, #edf2e9 100%);
+}
+
+.access-card {
+  width: min(100%, 31rem);
+  padding: clamp(2rem, 7vw, 3.5rem);
+  border: 1px solid #d9e0d7;
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 24px 70px rgba(29, 55, 39, .12);
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: .7rem;
+  color: white;
+  background: #007a4d;
+  font-family: Georgia, serif;
+  font-weight: 700;
+}
+
+.eyebrow {
+  margin: 1.5rem 0 .65rem;
+  color: #517060;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2rem, 5vw, 3.35rem); line-height: 1.04; }
+.access-intro { color: #53615a; line-height: 1.65; }
+label { display: block; margin: 1.75rem 0 .5rem; font-weight: 750; }
+.password-field { display: flex; align-items: center; border: 1px solid #aebbb2; border-radius: .75rem; background: white; }
+.password-field:focus-within { border-color: #007a4d; box-shadow: 0 0 0 3px rgba(0, 122, 77, .13); }
+.password-field input { width: 100%; min-width: 0; padding: .9rem 1rem; border: 0; outline: 0; background: transparent; }
+.text-button, .secondary-button, .cancel-button { border: 0; background: transparent; color: #006c45; font-weight: 750; }
+.password-field .text-button { padding: .75rem 1rem; }
+.primary-button {
+  min-height: 2.8rem;
+  padding: .75rem 1.2rem;
+  border: 0;
+  border-radius: .7rem;
+  color: white;
+  background: #007a4d;
+  font-weight: 800;
+}
+.access-card .primary-button { width: 100%; margin-top: 1rem; }
+.form-error, .chat-error { color: #a22620; font-weight: 700; }
+.privacy-note { margin: 1.4rem 0 0; color: #68736d; font-size: .85rem; text-align: center; }
+
+.app-shell { min-height: 100vh; }
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.5rem;
+  padding: .8rem clamp(1rem, 4vw, 3.5rem);
+  border-bottom: 1px solid #dfe5dc;
+  background: rgba(250, 251, 248, .92);
+  backdrop-filter: blur(14px);
+}
+.brand { display: flex; align-items: center; gap: .75rem; color: #1d3026; font-weight: 850; text-decoration: none; }
+.header-actions { display: flex; align-items: center; gap: .85rem; }
+.connection { color: #68736d; font-size: .8rem; text-transform: capitalize; }
+.connection--connected { color: #007a4d; }
+.secondary-button {
+  min-height: 2.55rem;
+  padding: .55rem .85rem;
+  border: 1px solid #b8c5bc;
+  border-radius: .65rem;
+  background: white;
+}
+
+.chat-layout { width: min(100% - 2rem, 58rem); margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) 0 3rem; }
+.chat-intro { max-width: 46rem; }
+.chat-intro > p:not(.eyebrow, .privacy-banner) { max-width: 40rem; color: #53615a; font-size: 1.05rem; line-height: 1.65; }
+.privacy-banner { display: inline-block; margin: 1rem 0 0; padding: .65rem .85rem; border-radius: .6rem; color: #43584b; background: #e8eee7; font-size: .86rem; }
+.conversation { min-height: 15rem; margin-top: 2rem; }
+.starter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
+.starter-grid button {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  min-height: 7rem;
+  padding: 1rem;
+  border: 1px solid #d5ddd4;
+  border-radius: 1rem;
+  color: #23382c;
+  background: #fff;
+  text-align: left;
+  box-shadow: 0 7px 20px rgba(45, 66, 53, .05);
+}
+.starter-grid button:hover { border-color: #79a28a; transform: translateY(-2px); }
+.message-list { display: grid; gap: 1.2rem; }
+.message { padding: 1.25rem; border-radius: 1rem; }
+.message--user { max-width: 80%; margin-left: auto; background: #dfece3; }
+.message--assistant { border: 1px solid #dce4da; background: #fff; box-shadow: 0 8px 24px rgba(45, 66, 53, .05); }
+.message-role, .product-label { margin: 0 0 .45rem; color: #5b6f62; font-size: .72rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.message-content { margin: 0; line-height: 1.7; white-space: pre-wrap; }
+.product-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-top: 1rem; padding: 1rem; border-left: 4px solid #e3a90a; border-radius: .55rem; background: #f6f8f3; }
+.product-card h3 { margin: 0; font-family: Georgia, serif; font-size: 1.25rem; }
+.fgmn { margin: .3rem 0 0; color: #607066; font-size: .85rem; }
+.product-card nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; }
+.product-card a { font-size: .85rem; font-weight: 750; }
+.sources { margin-top: 1rem; padding-top: .85rem; border-top: 1px solid #e1e6df; }
+.sources h3 { margin: 0; font-size: .86rem; }
+.sources ul { margin: .45rem 0 0; padding-left: 1.2rem; }
+.status-region { min-height: 2.5rem; padding: .8rem 0; color: #52645a; font-size: .9rem; }
+.retry-button { margin-bottom: 1rem; }
+
+.composer {
+  position: sticky;
+  bottom: 1rem;
+  margin-top: 1rem;
+  padding: .75rem;
+  border: 1px solid #cad5cc;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 15px 45px rgba(36, 58, 44, .13);
+  backdrop-filter: blur(12px);
+}
+.composer textarea { width: 100%; resize: vertical; padding: .5rem; border: 0; outline: 0; color: #17211b; background: transparent; line-height: 1.5; }
+.composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: #728078; font-size: .78rem; }
+.cancel-button { min-height: 2.8rem; color: #a22620; }
+
+@media (max-width: 720px) {
+  .app-header { align-items: flex-start; }
+  .header-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .connection { width: 100%; text-align: right; }
+  .starter-grid { grid-template-columns: 1fr; }
+  .starter-grid button { min-height: 4.5rem; }
+  .product-card { display: block; }
+  .product-card nav { justify-content: flex-start; margin-top: 1rem; }
+  .message--user { max-width: 92%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}

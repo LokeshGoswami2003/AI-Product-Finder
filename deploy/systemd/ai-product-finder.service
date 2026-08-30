@@ -1,0 +1,40 @@
+[Unit]
+Description=AI Product Finder backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=productfinder
+Group=productfinder
+WorkingDirectory=/opt/ai-product-finder/current/Backend
+EnvironmentFile=/etc/ai-product-finder/backend.env
+ExecStart=/usr/bin/env node index.js
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+UMask=0077
+StandardOutput=append:/var/log/ai-product-finder/backend.log
+StandardError=append:/var/log/ai-product-finder/backend.log
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/ai-product-finder
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

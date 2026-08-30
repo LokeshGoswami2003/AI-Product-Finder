@@ -1,0 +1,28 @@
+{
+  "name": "ai-product-finder-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Express API for AI Product Finder",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "node --test",
+    "ingest": "node scripts/ingest-local.js",
+    "benchmark:retrieval": "node scripts/benchmark-retrieval.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "cookie": "^1.0.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "minisearch": "^7.2.0",
+    "ws": "^8.18.3",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "supertest": "^7.1.4"
+  }
+}

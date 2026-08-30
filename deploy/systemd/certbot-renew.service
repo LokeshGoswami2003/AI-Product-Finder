@@ -1,0 +1,13 @@
+[Unit]
+Description=Renew Let's Encrypt certificates
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/certbot/bin/certbot renew --quiet --webroot -w /var/www/letsencrypt
+ExecStartPost=/usr/bin/systemctl reload nginx
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt /var/www/letsencrypt
