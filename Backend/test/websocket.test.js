@@ -36,23 +36,27 @@ test('authenticated WebSocket emits the complete protocol lifecycle', async (con
     config,
     corpusVersion: 'release-1',
     orchestrator: {
-      answer: async () => ({
-        text: 'Grounded answer',
-        usage: { total_tokens: 10 },
-        retrieval: {
-          results: [
-            {
-              product: {
-                fgmn: '71103853',
-                displayName: 'AdapT 100',
-                documents: {},
-                links: {},
+      answer: async ({ onProgress }) => {
+        onProgress('grounding')
+        onProgress('generating')
+        return {
+          text: 'Grounded answer',
+          usage: { total_tokens: 10 },
+          retrieval: {
+            results: [
+              {
+                product: {
+                  fgmn: '71103853',
+                  displayName: 'AdapT 100',
+                  documents: {},
+                  links: {},
+                },
+                sources: [{ id: 'product:71103853', title: 'AdapT 100' }],
               },
-              sources: [{ id: 'product:71103853', title: 'AdapT 100' }],
-            },
-          ],
-        },
-      }),
+            ],
+          },
+        }
+      },
     },
   })
   context.after(() => close(server, webSocketServer))
@@ -92,6 +96,8 @@ test('authenticated WebSocket emits the complete protocol lifecycle', async (con
     [
       'connection.ready',
       'chat.accepted',
+      'chat.progress',
+      'chat.progress',
       'chat.progress',
       'answer.delta',
       'answer.sources',

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AccessGate } from './components/AccessGate'
 import { ChatShell } from './components/ChatShell'
+import { EastmanPageMock } from './components/EastmanPageMock'
 
 function App() {
   const [authState, setAuthState] = useState('checking')
@@ -27,7 +28,16 @@ function App() {
   }
 
   if (authState === 'checking') {
-    return <main className="loading-page" aria-live="polite">Loading product finder…</main>
+    return (
+      <main className="preview-page">
+        <EastmanPageMock />
+        <div className="site-veil" />
+        <div className="loading-widget" role="status" aria-live="polite">
+          <span className="loading-spinner" aria-hidden="true" />
+          Loading product finder…
+        </div>
+      </main>
+    )
   }
   if (authState === 'anonymous') {
     return <AccessGate onAuthenticated={() => setAuthState('authenticated')} />

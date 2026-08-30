@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 
 const { ExactResolver } = require('../src/retrieval/exact-resolver')
+const { prepareSearchQuery } = require('../src/retrieval/lexical-index')
 const { reciprocalRankFusion } = require('../src/retrieval/rank-fusion')
 const { resolveExplicitRegion } = require('../src/retrieval/region')
 const { ProductRetriever } = require('../src/retrieval/retriever')
@@ -60,6 +61,13 @@ test('explicit region resolver recognizes supported aliases only', () => {
     name: 'Asia Pacific',
   })
   assert.equal(resolveExplicitRegion('global availability'), null)
+})
+
+test('lexical query preparation removes conversational noise but keeps requirements', () => {
+  assert.equal(
+    prepareSearchQuery('Please recommend Eastman products for coatings with strong adhesion'),
+    'coatings strong adhesion',
+  )
 })
 
 test('retriever returns exact, lexical, and safe incomplete-region outcomes', async () => {

@@ -55,6 +55,8 @@ Completed:
 
 - Added exact FGMN, normalized display-name, sort-name, and alias resolution.
 - Added weighted lexical, prefix, and fuzzy retrieval with MiniSearch.
+- Added conversational query cleanup so generic request words do not displace relevant
+  application, chemistry, and performance terms.
 - Added validated in-memory cosine vector search for precomputed embeddings.
 - Added reciprocal-rank fusion and product-level deduplication.
 - Added explicit region alias recognition and safe handling when Phase B memberships
@@ -95,8 +97,23 @@ Completed:
 - Added one-active-request behavior, explicit cancellation, disconnect aborts,
   payload/history limits, and native ping/pong heartbeats.
 - Added retrieval-first grounded OpenRouter orchestration.
+- Upgraded orchestration to a query-aware multistep RAG flow: catalog discovery,
+  a maximum-three-product shortlist, live TDS enrichment, optional SDS enrichment
+  for safety intent, and final grounded generation.
+- Added bounded, cached fetching of allowlisted Eastman technical-data pages.
+- Added regional SDS selection with a Generic GHS English fallback, form-based
+  retrieval of Eastman's generated SDS PDFs, and bounded PDF text extraction.
+- Added explicit unavailable-document evidence so a failed or missing TDS/SDS is
+  disclosed to the model rather than silently treated as available.
+- Added sales-response constraints for direct recommendations, consistent comparison
+  criteria, concise technical highlights, safety caveats, and a useful next step.
+- Added visible retrieving, source-grounding, and answer-generation progress stages.
 - Added deterministic source and product events rather than trusting model output.
-- Added HTTP, authentication, orchestration, WebSocket, and request-limit tests.
+- Added HTTP, authentication, orchestration, document-enrichment, WebSocket, and
+  request-limit tests.
+- Simulated live discovery, comparison, and India-specific SDS scenarios against the
+  catalog, Eastman document endpoints, and OpenRouter. The final comparison returned
+  three relevant products in 233 words without a wide table.
 
 Pending:
 
@@ -104,7 +121,7 @@ Pending:
 - Add an application-level model deadline and retry policy before output begins.
 - Validate OpenRouter provider retention and data-sharing settings before production use.
 - Add structured redacted logging, metrics, and active-socket readiness details.
-- Add deterministic comparison presentation and stronger generated-answer grounding checks.
+- Add stronger post-generation grounding checks beyond the current evidence-only prompt.
 - Add production proxy-trust configuration and end-to-end Nginx tests.
 
 ## Phase 5 / Phase E - Frontend
@@ -122,18 +139,27 @@ Completed:
   request replay.
 - Added stage announcements, streamed-delta accumulation, deterministic product
   cards, and official source links.
+- Added safe rendering for concise answer headings, bullet lists, and emphasis so
+  sales-oriented responses remain readable in the narrow popup.
 - Added client-side HTTPS Eastman hostname validation as defense in depth.
 - Added responsive styling, semantic landmarks, labels, visible focus, live regions,
   sufficient touch targets, and reduced-motion behavior.
+- Reworked the standalone chat screen into an Eastman-compatible floating product
+  assistant over a blurred product-finder page preview.
+- Added desktop popup, minimized launcher, phone and short-viewport full-screen modes,
+  safe-area spacing, compact product resources, and collapsible source evidence.
+- Simplified end-user copy and controls while preserving new-chat cancellation,
+  reconnect, access-code, and preview sign-out behavior.
 - Added a Vite development proxy for backend HTTP and WebSocket endpoints.
 - Added reducer and outbound-link logic tests.
+- Validated authentication, the proxied WebSocket, live OpenRouter answers, product
+  cards, minimize/reopen behavior, and viewport overflow at desktop and mobile sizes.
 
 Pending:
 
 - Add accessible deterministic comparison tables when backend comparison events exist.
 - Add high-information clarification chips when structured clarification options exist.
 - Add component/browser automation for login, chat, reconnect, and keyboard behavior.
-- Validate the complete experience against live OpenRouter responses.
 - Add richer grounded fit reasons and active-region chips when backend data is available.
 
 ## Phase 6 / Phase F - AWS deployment

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { EastmanPageMock } from './EastmanPageMock'
 
 export function AccessGate({ onAuthenticated }) {
   const [accessCode, setAccessCode] = useState('')
@@ -36,44 +37,56 @@ export function AccessGate({ onAuthenticated }) {
   }
 
   return (
-    <main className="access-page">
-      <section className="access-card" aria-labelledby="access-title">
-        <div className="brand-mark" aria-hidden="true">E</div>
-        <p className="eyebrow">AI PRODUCT FINDER</p>
-        <h1 id="access-title">Find the right Eastman product</h1>
-        <p className="access-intro">
-          Search product evidence, compare grades, and reach official technical resources.
-        </p>
-
-        <form onSubmit={submit}>
-          <label htmlFor="access-code">MVP access code</label>
-          <div className="password-field">
-            <input
-              id="access-code"
-              type={showCode ? 'text' : 'password'}
-              value={accessCode}
-              onChange={(event) => setAccessCode(event.target.value)}
-              autoComplete="current-password"
-              required
-              autoFocus
-            />
-            <button
-              className="text-button"
-              type="button"
-              onClick={() => setShowCode((visible) => !visible)}
-              aria-label={showCode ? 'Hide access code' : 'Show access code'}
-            >
-              {showCode ? 'Hide' : 'Show'}
-            </button>
+    <main className="preview-page">
+      <EastmanPageMock />
+      <div className="site-veil" />
+      <aside className="chat-widget access-widget" aria-labelledby="access-title">
+        <header className="widget-header">
+          <div className="assistant-identity">
+            <span className="assistant-mark" aria-hidden="true">✦</span>
+            <div>
+              <strong>Product finder</strong>
+              <span>Eastman assistant preview</span>
+            </div>
           </div>
-          {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="primary-button" type="submit" disabled={submitting}>
-            {submitting ? 'Checking…' : 'Continue'}
-          </button>
-        </form>
-        <p className="privacy-note">Your access code is never stored in this browser.</p>
-      </section>
+        </header>
+
+        <div className="access-content">
+          <p className="widget-kicker">MVP PREVIEW</p>
+          <h1 id="access-title">Find the right product, faster.</h1>
+          <p className="access-intro">
+            Enter the preview access code to search products and supporting Eastman resources.
+          </p>
+
+          <form onSubmit={submit}>
+            <label htmlFor="access-code">Access code</label>
+            <div className="password-field">
+              <input
+                id="access-code"
+                type={showCode ? 'text' : 'password'}
+                value={accessCode}
+                onChange={(event) => setAccessCode(event.target.value)}
+                autoComplete="current-password"
+                required
+                autoFocus
+              />
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => setShowCode((visible) => !visible)}
+                aria-label={showCode ? 'Hide access code' : 'Show access code'}
+              >
+                {showCode ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <button className="primary-button" type="submit" disabled={submitting}>
+              {submitting ? 'Checking…' : 'Open product finder'}
+            </button>
+          </form>
+          <p className="privacy-note">The code is used only to unlock this preview.</p>
+        </div>
+      </aside>
     </main>
   )
 }
-

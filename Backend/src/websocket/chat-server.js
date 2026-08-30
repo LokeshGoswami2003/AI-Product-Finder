@@ -116,6 +116,13 @@ function attachChatWebSocket({ server, config, orchestrator, corpusVersion }) {
           message: event.message,
           history: event.history,
           signal: controller.signal,
+          onProgress(stage) {
+            send(socket, {
+              type: 'chat.progress',
+              requestId: event.requestId,
+              stage,
+            })
+          },
         })
         if (controller.signal.aborted) return
 

@@ -5,6 +5,7 @@ const { createApp } = require('./app')
 const { ChatOrchestrator } = require('./chat/orchestrator')
 const { loadActiveRelease } = require('./corpus/load-release')
 const { parseEnv } = require('./config/env')
+const { EastmanDocumentClient } = require('./documents/eastman-document-client')
 const { OpenRouterClient } = require('./openrouter/client')
 const { ProductRetriever } = require('./retrieval/retriever')
 const { attachChatWebSocket } = require('./websocket/chat-server')
@@ -39,7 +40,15 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
         appName: config.OPENROUTER_APP_NAME,
         siteUrl: config.OPENROUTER_SITE_URL,
       })
-    const orchestrator = new ChatOrchestrator({ retriever, modelClient: client })
+    const documentClient = new EastmanDocumentClient({
+      timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,
+      cacheTtlMs: config.DOCUMENT_CACHE_TTL_SECONDS * 1000,
+    })
+    const orchestrator = new ChatOrchestrator({
+      retriever,
+      documentClient,
+      modelClient: client,
+    })
     attachChatWebSocket({
       server,
       config,

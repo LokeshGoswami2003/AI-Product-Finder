@@ -1,5 +1,46 @@
 const MiniSearch = require('minisearch')
 
+const QUERY_STOP_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'are',
+  'compare',
+  'eastman',
+  'find',
+  'for',
+  'give',
+  'i',
+  'me',
+  'need',
+  'of',
+  'or',
+  'please',
+  'product',
+  'products',
+  'recommend',
+  'show',
+  'some',
+  'tell',
+  'the',
+  'these',
+  'to',
+  'want',
+  'what',
+  'which',
+  'with',
+])
+
+function prepareSearchQuery(query) {
+  const terms = query
+    .normalize('NFKC')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term && !QUERY_STOP_WORDS.has(term))
+
+  return terms.length > 0 ? terms.join(' ') : query
+}
+
 class LexicalIndex {
   constructor(products) {
     this.products = new Map(products.map((product) => [product.fgmn, product]))
@@ -18,7 +59,7 @@ class LexicalIndex {
   }
 
   search(query, limit = 25) {
-    return this.index.search(query).slice(0, limit).map((result, index) => ({
+    return this.index.search(prepareSearchQuery(query)).slice(0, limit).map((result, index) => ({
       fgmn: result.fgmn,
       product: this.products.get(result.fgmn),
       score: result.score,
@@ -27,5 +68,4 @@ class LexicalIndex {
   }
 }
 
-module.exports = { LexicalIndex }
-
+module.exports = { LexicalIndex, prepareSearchQuery }

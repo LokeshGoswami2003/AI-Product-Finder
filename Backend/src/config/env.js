@@ -55,6 +55,8 @@ const envSchema = z
     CHAT_MAX_MESSAGE_CHARS: positiveInteger(4000),
     CHAT_MAX_HISTORY_TURNS: positiveInteger(10),
     CHAT_MAX_HISTORY_CHARS: positiveInteger(20000),
+    DOCUMENT_FETCH_TIMEOUT_MS: positiveInteger(15000),
+    DOCUMENT_CACHE_TTL_SECONDS: positiveInteger(3600),
     WS_MAX_PAYLOAD_BYTES: positiveInteger(32768),
     WS_HEARTBEAT_MS: positiveInteger(30000),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
