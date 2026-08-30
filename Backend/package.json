@@ -5,8 +5,8 @@
   "description": "Express API for AI Product Finder",
   "main": "index.js",
   "scripts": {
-    "start": "node --env-file-if-exists=../.env index.js",
-    "dev": "nodemon --exec \"node --env-file-if-exists=../.env\" index.js",
+    "start": "node --env-file-if-exists=.env index.js",
+    "dev": "nodemon --exec \"node --env-file-if-exists=.env\" index.js",
     "test": "node --test",
     "ingest": "node scripts/ingest-local.js",
     "benchmark:retrieval": "node scripts/benchmark-retrieval.js"

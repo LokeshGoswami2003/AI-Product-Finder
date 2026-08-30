@@ -53,7 +53,7 @@ Prerequisites:
 
 The production parameter must contain newline-delimited dotenv values with
 these exact deployment-specific settings in addition to the remaining values
-from `.env.example`:
+from `Backend/.env.example`:
 
 ```dotenv
 NODE_ENV=production

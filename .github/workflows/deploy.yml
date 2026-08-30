@@ -37,19 +37,21 @@ jobs:
         run: npm ci --prefix Frontend
 
       - name: Run tests
-        run: npm test
+        run: |
+          npm --prefix Backend test
+          npm --prefix Frontend test
 
       - name: Build corpus release
-        run: npm run ingest
+        run: npm --prefix Backend run ingest
 
       - name: Run retrieval benchmark
-        run: npm run benchmark:retrieval
+        run: npm --prefix Backend run benchmark:retrieval
 
       - name: Lint frontend
-        run: npm run lint
+        run: npm --prefix Frontend run lint
 
       - name: Build frontend
-        run: npm run build
+        run: npm --prefix Frontend run build
 
       - name: Create deployment bundle
         run: bash deploy/scripts/create-release-bundle.sh "release-${GITHUB_SHA}.tar.gz"

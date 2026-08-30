@@ -1507,6 +1507,7 @@ Do not claim performance targets as achieved until measured on the deployed hard
 ```text
 AI-Product-Finder/
 ├── Backend/
+│   ├── .env.example
 │   ├── index.js
 │   ├── src/
 │   │   ├── app.js
@@ -1544,7 +1545,6 @@ AI-Product-Finder/
 │   ├── iam/
 │   └── runbook.md
 ├── fixtures/
-├── .env.example
 ├── productfinder.json
 ├── links.md
 └── knowledge.md
@@ -1557,13 +1557,13 @@ Generated artifacts, actual `.env` files, logs, local certificates, and temporar
 ### Phase A — foundation
 
 - Keep this knowledge file current.
-- Add root `.gitignore` and `.env.example`.
+- Add workspace-scoped ignore rules and a backend `.env.example`.
 - Add environment and protocol schemas.
 - Add URL builders/validators and test fixtures.
 - Establish backend/frontend/test scripts.
 
-Minimal foundation implemented on 2026-08-30: root ignore/environment templates and
-orchestration scripts, Zod-backed backend environment and client WebSocket schemas,
+Minimal foundation implemented on 2026-08-30: workspace ignore/environment templates
+and package scripts, Zod-backed backend environment and client WebSocket schemas,
 allowlisted Eastman URL utilities, and Node test fixtures are in place. Server wiring
 remains in Phase D, and ingestion/artifact schemas remain in Phase B.
 

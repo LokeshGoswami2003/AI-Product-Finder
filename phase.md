@@ -8,11 +8,11 @@ Status: Complete (minimal scope)
 
 Completed:
 
-- Added root ignore rules and an environment-variable template.
+- Added workspace-scoped ignore rules and a backend environment template.
 - Added validated backend environment and client WebSocket event schemas.
 - Added allowlisted Eastman URL builders and validators.
 - Added backend fixtures and foundation tests.
-- Added root scripts for backend, frontend, build, lint, and tests.
+- Added backend and frontend scripts for development, build, lint, and tests.
 
 Deferred to later phases:
 
