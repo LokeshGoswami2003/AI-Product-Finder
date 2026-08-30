@@ -161,10 +161,11 @@ Completed:
   `3.108.136.204` and verified SSM registration and base packages.
 - Created the private GitHub repository and configured repository-scoped OIDC
   deployment variables without storing AWS credentials in GitHub.
+- Deployed the first release through GitHub Actions and verified OIDC, S3,
+  SSM, Node 22, systemd, Nginx, backend readiness, CloudWatch, and rollback.
 
 Pending:
 
-- Deploy and verify the first production release through GitHub Actions.
 - Replace the stale Hostinger A record with the stack Elastic IP.
 - Issue and verify the first Let's Encrypt certificate after DNS propagates.
 - Run public HTTPS, WSS, login, and OpenRouter smoke tests.
