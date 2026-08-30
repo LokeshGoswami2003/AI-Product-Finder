@@ -18,9 +18,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -37,6 +37,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Build corpus release
+        run: npm run ingest
+
       - name: Run retrieval benchmark
         run: npm run benchmark:retrieval
 
@@ -45,9 +48,6 @@ jobs:
 
       - name: Build frontend
         run: npm run build
-
-      - name: Build corpus release
-        run: npm run ingest
 
       - name: Create deployment bundle
         run: bash deploy/scripts/create-release-bundle.sh "release-${GITHUB_SHA}.tar.gz"
