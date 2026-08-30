@@ -72,7 +72,9 @@ Record these stack outputs as GitHub Actions repository variables:
   `/ai-product-finder/production/backend-env`
 - `AWS_REGION` as `ap-south-1`
 
-The workflow deploys on pushes to `main` and can also be run manually.
+The workflow deploys on pushes to `main` and can also be run manually. Its
+OIDC role trusts only the GitHub `production` environment, whose deployment
+branch policy must allow only `main`.
 
 ## DNS and first certificate
 

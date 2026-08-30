@@ -52,7 +52,7 @@ jobs:
       - name: Create deployment bundle
         run: bash deploy/scripts/create-release-bundle.sh "release-${GITHUB_SHA}.tar.gz"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: production-release
           path: release-${{ github.sha }}.tar.gz
@@ -64,11 +64,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: production-release
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

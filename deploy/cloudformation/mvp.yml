@@ -19,9 +19,6 @@ Parameters:
   GitHubRepository:
     Type: String
     Default: AI-Product-Finder
-  GitHubBranch:
-    Type: String
-    Default: main
   VpcId:
     Type: AWS::EC2::VPC::Id
   SubnetId:
@@ -299,7 +296,7 @@ Resources:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
                 token.actions.githubusercontent.com:sub: !Sub >-
-                  repo:${GitHubOwner}/${GitHubRepository}:ref:refs/heads/${GitHubBranch}
+                  repo:${GitHubOwner}/${GitHubRepository}:environment:${EnvironmentName}
       Policies:
         - PolicyName: DeployRelease
           PolicyDocument:
