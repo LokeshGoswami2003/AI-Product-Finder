@@ -20,6 +20,27 @@ deployment role. SSH is deliberately not exposed.
   fails. Operators can also invoke the explicit rollback script.
 - Certbot uses the webroot challenge and a systemd timer for renewal.
 
+## Current production deployment
+
+- URL: `https://samvad.space`
+- CloudFormation stack: `ai-product-finder-production`
+- EC2 instance: `i-0a40a4c71ee5756bc`
+- Elastic IP: `3.108.136.204`
+- Certificate expiry: 2026-11-28
+- Certificate renewal: `certbot-renew.timer`, verified with a successful
+  Let's Encrypt staging dry-run on 2026-08-30
+
+Retrieve the generated shared access code only when needed:
+
+```powershell
+aws ssm get-parameter `
+  --region ap-south-1 `
+  --name /ai-product-finder/production/access-code `
+  --with-decryption `
+  --query Parameter.Value `
+  --output text
+```
+
 ## Initial provisioning
 
 Prerequisites:
@@ -83,6 +104,7 @@ gh api repos/LokeshGoswami2003/AI-Product-Finder/actions/oidc/customization/sub
 
 The OIDC role trusts only that immutable repository identity and the GitHub
 `production` environment, whose deployment branch policy allows only `main`.
+Markdown-only commits are excluded from automatic production deployments.
 
 ## DNS and first certificate
 

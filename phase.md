@@ -138,7 +138,7 @@ Pending:
 
 ## Phase 6 / Phase F - AWS deployment
 
-Status: In progress
+Status: Complete (minimal production scope)
 
 Completed:
 
@@ -163,12 +163,18 @@ Completed:
   deployment variables without storing AWS credentials in GitHub.
 - Deployed the first release through GitHub Actions and verified OIDC, S3,
   SSM, Node 22, systemd, Nginx, backend readiness, CloudWatch, and rollback.
+- Repointed Hostinger DNS to the Elastic IP and enabled HTTPS for
+  `samvad.space` with a valid Let's Encrypt certificate.
+- Enabled and verified automatic certificate renewal with a successful
+  staging dry-run.
+- Verified public HTTP-to-HTTPS redirect, security headers, readiness,
+  access-code login, authenticated WSS, retrieval, OpenRouter generation,
+  deterministic sources, and product cards.
+- Verified rollback between two distinct release commits and restored the
+  latest healthy release.
 
-Pending:
+Deferred beyond the minimal deployment:
 
-- Replace the stale Hostinger A record with the stack Elastic IP.
-- Issue and verify the first Let's Encrypt certificate after DNS propagates.
-- Run public HTTPS, WSS, login, and OpenRouter smoke tests.
 - Validate OpenRouter production retention/data-sharing behavior.
 - Enable scheduled ingestion only after Phase B supports live source refresh.
 

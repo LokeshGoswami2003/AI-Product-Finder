@@ -1641,6 +1641,13 @@ repointed before the first certificate can be issued. Scheduled ingestion
 remains disabled until Phase B implements live refresh rather than rebuilding
 the bundled snapshot.
 
+Phase F's minimal production scope was completed on 2026-08-30. The private
+GitHub repository deploys through immutable-subject OIDC to the production
+environment, which is restricted to `main`. The EC2 release is healthy at
+`https://samvad.space`; HTTP redirect, access-code authentication, WSS,
+retrieval, OpenRouter generation, deterministic evidence events, CloudWatch,
+cross-version rollback, and a Let's Encrypt renewal dry-run were verified.
+
 ### Phase G — launch validation
 
 - Run all automated suites.
