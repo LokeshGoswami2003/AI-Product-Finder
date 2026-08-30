@@ -57,6 +57,7 @@ aws cloudformation deploy `
   --parameter-overrides `
     GitHubOwner=LokeshGoswami2003 `
     GitHubRepository=AI-Product-Finder `
+    GitHubSubjectPrefix="repo:LokeshGoswami2003@101193577/AI-Product-Finder@1351404176" `
     DomainName=samvad.space `
     VpcId=<default-vpc-id> `
     SubnetId=<public-subnet-id>
@@ -72,9 +73,16 @@ Record these stack outputs as GitHub Actions repository variables:
   `/ai-product-finder/production/backend-env`
 - `AWS_REGION` as `ap-south-1`
 
-The workflow deploys on pushes to `main` and can also be run manually. Its
-OIDC role trusts only the GitHub `production` environment, whose deployment
-branch policy must allow only `main`.
+The workflow deploys on pushes to `main` and can also be run manually.
+Repositories created after July 15, 2026 use GitHub's immutable OIDC subject
+format, so `GitHubSubjectPrefix` must match the value returned by:
+
+```powershell
+gh api repos/LokeshGoswami2003/AI-Product-Finder/actions/oidc/customization/sub
+```
+
+The OIDC role trusts only that immutable repository identity and the GitHub
+`production` environment, whose deployment branch policy allows only `main`.
 
 ## DNS and first certificate
 
