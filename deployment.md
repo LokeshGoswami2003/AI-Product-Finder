@@ -23,12 +23,17 @@ deployment role. SSH is deliberately not exposed.
 ## Current production deployment
 
 - URL: `https://samvad.space`
+- Direct IP URL: `https://3.108.136.204`
 - CloudFormation stack: `ai-product-finder-production`
 - EC2 instance: `i-0a40a4c71ee5756bc`
 - Elastic IP: `3.108.136.204`
 - Certificate expiry: 2026-11-28
+- Elastic IP certificate expiry: 2026-09-07
 - Certificate renewal: `certbot-renew.timer`, verified with a successful
   Let's Encrypt staging dry-run on 2026-08-30
+- The Elastic IP uses a separate Let's Encrypt `shortlived` certificate. IP
+  certificates are valid for 160 hours, so the same twice-daily renewal timer
+  renews it automatically and reloads Nginx only after a successful renewal.
 
 Retrieve the generated shared access code only when needed:
 
@@ -59,7 +64,8 @@ from `Backend/.env.example`:
 NODE_ENV=production
 PORT=3000
 APP_ORIGIN=https://samvad.space
-OPENROUTER_SITE_URL=https://samvad.space
+AI_PROVIDER=vercel
+VERCEL_AI_GATEWAY_MODEL=zai/glm-5.3-flash
 CORPUS_ARTIFACT_DIR=/opt/ai-product-finder/current/artifacts
 ```
 
@@ -127,6 +133,27 @@ starts `certbot-renew.timer`, and reloads Nginx. Verify:
 curl --fail https://samvad.space/api/health/live
 curl --fail https://samvad.space/api/health/ready
 systemctl status ai-product-finder nginx certbot-renew.timer
+```
+
+To enable HTTPS directly on the instance's Elastic IP after domain TLS is
+active, use the IP-specific setup script:
+
+```bash
+sudo /opt/ai-product-finder/current/deploy/scripts/configure-ip-tls.sh \
+  3.108.136.204 samvad.space
+```
+
+The script installs a Certbot version with IP-certificate support, requests a
+separate Let's Encrypt `shortlived` certificate, and adds an IP-specific Nginx
+virtual host. The IP endpoint translates only the exact same-origin IP request
+to the backend's configured domain origin; other origins remain unchanged and
+continue to be rejected. Verify both endpoints:
+
+```bash
+curl --fail https://3.108.136.204/api/health/ready
+curl --fail https://samvad.space/api/health/ready
+sudo /opt/certbot/bin/certbot certificates
+systemctl status certbot-renew.timer
 ```
 
 ## Rollback

@@ -18,6 +18,8 @@ candidate_path="${application_root}/releases/${release_id}.candidate"
 release_path="${application_root}/releases/${release_id}"
 previous_target=""
 environment_backup=""
+metadata_token=""
+public_ip=""
 
 if [[ ! "${release_id}" =~ ^[0-9a-f]{40}$ ]]; then
   echo "Release ID must be a full Git commit SHA." >&2
@@ -31,6 +33,13 @@ if [[ ! "${object_key}" =~ ^releases/[0-9a-f]{40}\.tar\.gz$ ]]; then
   echo "Unexpected deployment object key." >&2
   exit 1
 fi
+
+metadata_token="$(curl --fail --silent --show-error -X PUT \
+  -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' \
+  http://169.254.169.254/latest/api/token)"
+public_ip="$(curl --fail --silent --show-error \
+  -H "X-aws-ec2-metadata-token: ${metadata_token}" \
+  http://169.254.169.254/latest/meta-data/public-ipv4)"
 
 install_node() {
   if command -v node >/dev/null 2>&1 && [[ "$(node --version)" =~ ^v(22|24)\. ]]; then
@@ -59,6 +68,16 @@ render_nginx() {
   local template_name="http.conf.template"
   if [[ -s "/etc/letsencrypt/live/${domain}/fullchain.pem" ]]; then
     template_name="https.conf.template"
+  fi
+  mkdir -p /etc/nginx/conf.d
+  if [[ -s "/etc/letsencrypt/live/${public_ip}/fullchain.pem" ]]; then
+    sed \
+      -e "s/__DOMAIN__/${domain}/g" \
+      -e "s/__PUBLIC_IP__/${public_ip}/g" \
+      "${release_path}/deploy/nginx/ip-https.conf.template" \
+      > /etc/nginx/conf.d/ai-product-finder-ip-https.conf
+  else
+    rm -f /etc/nginx/conf.d/ai-product-finder-ip-https.conf
   fi
   sed "s/__DOMAIN__/${domain}/g" \
     "${release_path}/deploy/nginx/${template_name}" \

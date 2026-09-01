@@ -6,8 +6,8 @@ const { ChatOrchestrator } = require('./chat/orchestrator')
 const { loadActiveRelease } = require('./corpus/load-release')
 const { parseEnv } = require('./config/env')
 const { EastmanDocumentClient } = require('./documents/eastman-document-client')
-const { OpenRouterClient } = require('./openrouter/client')
 const { ProductRetriever } = require('./retrieval/retriever')
+const { VercelAIGatewayClient } = require('./vercel-ai-gateway/client')
 const { attachChatWebSocket } = require('./websocket/chat-server')
 
 async function createServer({ config = parseEnv(), modelClient } = {}) {
@@ -33,12 +33,10 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
     const retriever = new ProductRetriever(corpus)
     const client =
       modelClient ||
-      new OpenRouterClient({
-        apiKeys: config.OPENROUTER_API_KEYS,
-        model: config.OPENROUTER_MODEL,
-        baseUrl: config.OPENROUTER_BASE_URL,
-        appName: config.OPENROUTER_APP_NAME,
-        siteUrl: config.OPENROUTER_SITE_URL,
+      new VercelAIGatewayClient({
+        apiKey: config.VERCEL_AI_GATEWAY_API_KEY,
+        model: config.VERCEL_AI_GATEWAY_MODEL,
+        baseUrl: config.VERCEL_AI_GATEWAY_BASE_URL,
       })
     const documentClient = new EastmanDocumentClient({
       timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,

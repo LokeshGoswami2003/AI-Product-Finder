@@ -64,8 +64,9 @@ Completed:
 - Added deterministic source metadata and categorical outcomes: exact,
   recommendation, clarification, and no evidence.
 - Added active-release loading and real-corpus retrieval regression benchmarks.
-- Configured OpenRouter as the MVP provider with the `openrouter/free` router.
-- Added two-key rotation for key-specific authorization, credit, and rate-limit failures.
+- Replaced OpenRouter with Vercel AI Gateway and pinned the MVP to
+  `zai/glm-5.3-flash`.
+- Added explicit Vercel AI Gateway errors and retryability metadata.
 - Added the local `sampel.env` secret file to Git ignore rules.
 
 Pending:
@@ -74,11 +75,11 @@ Pending:
 - Populate facet memberships before enabling region and other metadata hard filters.
 - Expand the benchmark with product families, applications, grades, and negative cases.
 - Calibrate retrieval limits, RRF constants, and confidence policy from evaluation results.
-- Wire retrieval and OpenRouter generation into the Phase D chat orchestration.
+- Wire retrieval and Vercel AI Gateway generation into the Phase D chat orchestration.
 
-OpenRouter keys are read from `OPENROUTER_API_KEYS` as a comma-separated secret value.
-The selected `openrouter/free` router uses currently available free models rather than
-pinning the MVP to a free model that may later be removed.
+The Vercel credential is read from `VERCEL_AI_GATEWAY_API_KEY` as one secret value.
+The model is pinned through `VERCEL_AI_GATEWAY_MODEL` so local and production behavior
+remain consistent.
 
 ## Phase 4 / Phase D - Backend and chat
 
@@ -96,7 +97,7 @@ Completed:
   error events.
 - Added one-active-request behavior, explicit cancellation, disconnect aborts,
   payload/history limits, and native ping/pong heartbeats.
-- Added retrieval-first grounded OpenRouter orchestration.
+- Added retrieval-first grounded Vercel AI Gateway orchestration.
 - Upgraded orchestration to a query-aware multistep RAG flow: catalog discovery,
   a maximum-three-product shortlist, live TDS enrichment, optional SDS enrichment
   for safety intent, and final grounded generation.
@@ -112,14 +113,14 @@ Completed:
 - Added HTTP, authentication, orchestration, document-enrichment, WebSocket, and
   request-limit tests.
 - Simulated live discovery, comparison, and India-specific SDS scenarios against the
-  catalog, Eastman document endpoints, and OpenRouter. The final comparison returned
+  catalog, Eastman document endpoints, and the configured model gateway. The final comparison returned
   three relevant products in 233 words without a wide table.
 
 Pending:
 
-- Stream OpenRouter response deltas instead of returning one complete delta.
+- Stream model response deltas instead of returning one complete delta.
 - Add an application-level model deadline and retry policy before output begins.
-- Validate OpenRouter provider retention and data-sharing settings before production use.
+- Validate Vercel AI Gateway and upstream-model retention settings before production use.
 - Add structured redacted logging, metrics, and active-socket readiness details.
 - Add stronger post-generation grounding checks beyond the current evidence-only prompt.
 - Add production proxy-trust configuration and end-to-end Nginx tests.
@@ -152,7 +153,7 @@ Completed:
   reconnect, access-code, and preview sign-out behavior.
 - Added a Vite development proxy for backend HTTP and WebSocket endpoints.
 - Added reducer and outbound-link logic tests.
-- Validated authentication, the proxied WebSocket, live OpenRouter answers, product
+- Validated authentication, the proxied WebSocket, live generated answers, product
   cards, minimize/reopen behavior, and viewport overflow at desktop and mobile sizes.
 
 Pending:
@@ -191,17 +192,23 @@ Completed:
   SSM, Node 22, systemd, Nginx, backend readiness, CloudWatch, and rollback.
 - Repointed Hostinger DNS to the Elastic IP and enabled HTTPS for
   `samvad.space` with a valid Let's Encrypt certificate.
+- Enabled direct trusted HTTPS access at `https://3.108.136.204` with a
+  separate six-day Let's Encrypt IP certificate and IP-specific Nginx virtual
+  host.
 - Enabled and verified automatic certificate renewal with a successful
-  staging dry-run.
+  staging dry-run for both the domain and short-lived IP certificate workflows.
+- Preserved exact-origin enforcement for direct IP access by translating only
+  same-origin IP requests at the trusted Nginx boundary; foreign origins remain
+  rejected.
 - Verified public HTTP-to-HTTPS redirect, security headers, readiness,
-  access-code login, authenticated WSS, retrieval, OpenRouter generation,
+  access-code login, authenticated WSS, retrieval, Vercel AI Gateway generation,
   deterministic sources, and product cards.
 - Verified rollback between two distinct release commits and restored the
   latest healthy release.
 
 Deferred beyond the minimal deployment:
 
-- Validate OpenRouter production retention/data-sharing behavior.
+- Validate Vercel AI Gateway and upstream-model production retention behavior.
 - Enable scheduled ingestion only after Phase B supports live source refresh.
 
 ## Phase 7 / Phase G - Launch validation

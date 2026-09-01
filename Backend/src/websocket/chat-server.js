@@ -157,7 +157,7 @@ function attachChatWebSocket({ server, config, orchestrator, corpusVersion }) {
           send(socket, {
             type: 'error',
             requestId: event.requestId,
-            code: error.name === 'OpenRouterError' ? 'model_error' : 'chat_error',
+            code: error.name === 'VercelAIGatewayError' ? 'model_error' : 'chat_error',
             message: 'The answer could not be completed. Please retry.',
             fatal: false,
           })
