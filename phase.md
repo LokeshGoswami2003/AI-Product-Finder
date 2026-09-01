@@ -65,7 +65,7 @@ Completed:
   recommendation, clarification, and no evidence.
 - Added active-release loading and real-corpus retrieval regression benchmarks.
 - Replaced OpenRouter with Vercel AI Gateway and pinned the MVP to
-  `minimax/minimax-m3`.
+  `zai/glm-5.3-flash`.
 - Added explicit Vercel AI Gateway errors and retryability metadata.
 - Added the local `sampel.env` secret file to Git ignore rules.
 
