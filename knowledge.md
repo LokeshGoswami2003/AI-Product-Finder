@@ -990,7 +990,7 @@ Before launch validation, document and verify Vercel AI Gateway and upstream-mod
 | `AUTH_TTL_SECONDS`           | Nonsecret      | Short auth-cookie lifetime                 |
 | `AI_PROVIDER`                | Nonsecret      | Fixed to `vercel` for the current MVP      |
 | `VERCEL_AI_GATEWAY_API_KEY`  | Secret         | Server-only Vercel AI Gateway credential   |
-| `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `zai/glm-5.3-flash`                 |
+| `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `zai/glm-5.3-flash`                |
 | `VERCEL_AI_GATEWAY_BASE_URL` | Nonsecret      | Gateway API base URL                       |
 | `EASTMAN_PRODUCT_FINDER_URL` | Nonsecret      | Verified component endpoint                |
 | `CORPUS_ARTIFACT_DIR`        | Nonsecret      | Path containing the active release pointer |
