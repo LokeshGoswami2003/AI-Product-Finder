@@ -1,12 +1,12 @@
 # Eastman AI Product Finder MVP — Knowledge Base
 
-| Field         | Value                                                           |
-| ------------- | --------------------------------------------------------------- |
-| Purpose       | Canonical technical and product-discovery knowledge for the MVP |
-| Last verified | 2026-08-30                                                      |
-| Current phase | Discovery and architecture complete; implementation not started |
-| Target stack  | React, Express, native WebSockets, Amazon Bedrock, EC2, Nginx   |
-| Data policy   | No database and no persistent user/chat retention               |
+| Field         | Value                                                            |
+| ------------- | ---------------------------------------------------------------- |
+| Purpose       | Canonical technical and product-discovery knowledge for the MVP  |
+| Last verified | 2026-09-02                                                       |
+| Current phase | Core implementation and minimal production deployment complete   |
+| Target stack  | React, Express, native WebSockets, Vercel AI Gateway, EC2, Nginx |
+| Data policy   | No database and no persistent user/chat retention                |
 
 ## How to read this document
 
@@ -33,16 +33,16 @@ Eastman endpoint behavior documented here was reverse-engineered from public web
 ### Decisions
 
 - Build a standalone React + Express service using native WebSockets.
-- Use Amazon Bedrock for generation and embeddings.
+- Use Vercel AI Gateway with `minimax/minimax-m3` for MVP generation.
 - Deploy one same-origin service on AWS EC2 behind Nginx.
 - Use one shared test access code, exchanged for a short-lived secure cookie.
-- Keep conversation history only in React memory and resend a bounded history with each request.
+- Keep a bounded conversation transcript and recent validated product references in Express process memory, keyed by an anonymous signed-session nonce; never trust client-supplied history.
 - Do not use a database or persist prompts, responses, histories, or query embeddings.
 - Apply a regional availability filter only when the user explicitly supplies a region.
 
 ### Recommended solution
 
-Build a versioned product corpus outside the chat request path. Enrich products with live facet memberships and parsed TDS sections, generate lexical and semantic indexes, and load the immutable artifacts into Express memory. For each chat request, use exact matching, lexical/fuzzy retrieval, Titan embeddings, metadata filters, and reciprocal-rank fusion. Send only the grounded evidence bundle to a configurable Bedrock chat model. Stream explanatory text through the WebSocket while rendering product cards, comparison tables, links, and citations from validated server records rather than model-generated data.
+Load the versioned local product corpus into Express memory. For each substantive chat request, use exact and lexical/fuzzy retrieval, deterministic requirement-aware reranking, product-family diversification, and validated recent-product context. Enrich no more than three products with query-relevant live Eastman TDS/SDS evidence, and send only that bounded evidence and server-owned history to `minimax/minimax-m3` through Vercel AI Gateway. The model does not receive the full `productfinder.json`. Return explanatory text separately from deterministic product cards and official source links. Semantic embeddings, complete facet memberships, token streaming, and deterministic comparison tables remain future improvements.
 
 ## 2. MVP goals and boundaries
 
@@ -54,7 +54,7 @@ Build a versioned product corpus outside the chat request path. Enrich products 
 - Exact product and FGMN lookup.
 - Brand, market, product type, application, and explicit-region filtering.
 - Official product detail, TDS, SDS selector, sales specification, and inquiry links.
-- Streaming responses, product cards, citations, comparison tables, clarification questions, and cancellation.
+- Typed answer events, product cards, citations, progress, cancellation, reconnect restoration, and a deterministic sales handoff.
 - Static shared-code authentication suitable for a controlled MVP.
 - Versioned local product/index artifacts with scheduled refreshes.
 - EC2, Nginx, TLS, systemd, IAM instance profile, health checks, and operational logging without chat content.
@@ -63,10 +63,10 @@ Build a versioned product corpus outside the chat request path. Enrich products 
 
 - User accounts, role management, SSO, or saved preferences.
 - A relational database, document database, or managed vector database.
-- Saved, exported, searchable, or server-side chat history.
+- Saved, exported, searchable, persistent, or database-backed chat history.
 - Analytics containing prompts, responses, retrieved passages, or product-interest text.
 - Crawling Eastman during every user-facing chat request.
-- Caching or parsing the final locale-specific SDS document.
+- Persistent or universal storage of generated locale-specific SDS documents; runtime extracts are bounded, cached only in process memory for a short TTL, and tied to the selected Eastman SDS option.
 - Pricing, real-time inventory, lead times, order placement, or sample submission inside the app.
 - Claims that a product is safe, compliant, approved, available, or suitable for a user’s final use.
 - Multilingual retrieval, voice, image input, high availability, or autoscaling.
@@ -75,25 +75,28 @@ Build a versioned product corpus outside the chat request path. Enrich products 
 
 ### Backend — verified
 
-`Backend/index.js` is a minimal CommonJS Express server:
+`Backend/index.js` starts a CommonJS Express and `ws` service through `Backend/src/server.js`:
 
-- Uses Express `^5.2.1`.
-- Uses `express.json()`.
-- Exposes `GET /` with an API-running message.
-- Exposes `GET /api/health` with `{ "status": "ok" }`.
-- Listens on `process.env.PORT || 3000`.
-- Has no authentication, WebSocket upgrade handler, Bedrock client, retrieval layer, input validation, rate limiting, structured logging, or tests.
-- `Backend/package.json` provides `start` and `dev` scripts and has nodemon `^3.1.14` as its only development dependency.
+- Uses Express `^5.2.1`, `ws`, Zod, MiniSearch, Cheerio, and `pdf-parse`.
+- Exposes liveness/readiness and shared-code session routes.
+- Authenticates exact-origin WebSocket upgrades with a signed HttpOnly cookie.
+- Loads the active immutable corpus into memory and performs exact, lexical/fuzzy, and deterministic requirement-aware retrieval.
+- Keeps bounded, anonymous, per-session conversation context in process memory and rejects client-supplied history.
+- Resolves follow-up pronouns, ordinals, terse document/location questions, and requests for other products from validated recent FGMNs.
+- Fetches and caches allowlisted Eastman TDS HTML and region-aware SDS PDF text for current shortlisted products.
+- Calls Vercel AI Gateway once for each supported substantive answer; social/scope responses, no-evidence responses, and fourth-turn handoff can use zero model calls.
+- Enforces one active request and three substantive product turns per signed session, with cancellation/error quota rollback.
+- Provides Node test, local ingestion, and active-corpus retrieval benchmark scripts.
 
 ### Frontend — verified
 
-- React and React DOM are `^19.2.8`.
-- Vite is `^8.2.2`; ESLint is `^10.9.0`.
-- `Frontend/src/App.jsx` returns `null`.
-- `Frontend/src/main.jsx` uses the standard React StrictMode bootstrap.
-- `Frontend/src/index.css` only applies box sizing, minimum dimensions, zero margins, and a black page background.
-- `Frontend/vite.config.js` only enables the React plugin.
-- There is no login view, chat state, WebSocket client, product card, comparison UI, source rendering, error handling, accessibility flow, frontend test setup, or runtime environment schema.
+- React and React DOM are `^19.2.8`; Vite is `^8.2.2` and ESLint is `^10.9.0`.
+- The access gate exchanges the shared code for the server cookie without storing the code.
+- The floating responsive chat widget uses a reducer and reconnecting WebSocket hook.
+- React keeps only the rendering cache; `conversation.snapshot` restores authoritative bounded server messages and quota after connection/reconnection.
+- The client sends only the current message, renders deterministic product cards and allowlisted official sources, and never automatically replays a generation.
+- The composer displays remaining guided questions and locks after the official Eastman inquiry handoff.
+- Frontend unit tests, lint, and production build scripts are implemented.
 
 ### Root data files — verified
 
@@ -208,6 +211,7 @@ The counts overlap because one product can be represented in several regions. Th
 - Product families contain many closely related grades, concentrations, regions, colors, food-contact variants, Renew percentages, or packaging variants. Similar names are not duplicates.
 - Unicode symbols, trademarks, en dashes, punctuation, double hyphens, trailing hyphens, and blank `pn` values occur in live links.
 - Some products have sparse descriptions or document sections. Missing information must remain missing rather than being inferred from a related grade.
+- The snapshot contains only one explicit BPA statement: Eastman Tritan GX100 copolyester (`71068692`) says it is free of materials of concern including BPA, but its summary describes heavy-gauge sheet uses rather than bottles. No BPA conclusion may be inferred for another grade from this family-level proximity, and absence of a BPA statement is not evidence that a product contains or excludes BPA.
 
 ## 5. Eastman product-finder endpoint
 
@@ -449,7 +453,7 @@ flowchart LR
 		E[Express HTTP + WebSocket]
 		R[In-memory hybrid retriever]
 		A[Versioned corpus artifacts]
-		B[Amazon Bedrock Runtime]
+		G[Vercel AI Gateway]
 		X[Eastman public sources]
 		I[Scheduled ingestion process]
 
@@ -457,20 +461,21 @@ flowchart LR
 		N -->|/api and /ws/chat| E
 		E --> R
 		R --> A
-		E -->|ConverseStream / InvokeModel| B
+		E -->|HTTPS chat completion| G
+		E -->|bounded live TDS/SDS fetch| X
 		X -->|scheduled fetch only| I
 		I -->|validated atomic release| A
 ```
 
 ### Runtime principles
 
-- No Eastman crawl in the interactive response path.
-- No server-side conversation session store.
+- No full-catalog Eastman crawl in the interactive path; only bounded TDS/SDS enrichment for the current one-to-three shortlisted products.
+- No persistent or external conversation store; bounded context exists only in Express process memory for the signed-session lifetime.
 - No database lookup or network vector service.
 - Product/index artifacts load once at startup and swap only after validation.
-- Exact and lexical retrieval still operate if Bedrock embeddings are temporarily unavailable.
+- Exact and lexical retrieval operate without query embeddings; semantic retrieval is not active yet.
 - Product cards and comparisons come from server-owned validated data.
-- Bedrock produces explanation, synthesis, and follow-up language—not authoritative identifiers or document URLs.
+- The configured gateway model produces explanation, synthesis, and follow-up language—not authoritative identifiers or document URLs.
 
 ## 9. No-retention and privacy model
 
@@ -481,27 +486,18 @@ flowchart LR
 | Product corpus, facets, TDS chunks | Versioned EBS artifacts and process memory | Until refreshed/replaced          | Yes; public application data     |
 | Document embeddings                | Versioned artifacts and process memory     | Until refreshed/replaced          | Yes; public application data     |
 | Access cookie                      | Browser cookie                             | Short configured TTL or logout    | Temporarily; authentication only |
-| Chat messages/history              | React state                                | Current browser tab/page lifetime | No                               |
+| Chat messages/history              | Express memory; React rendering cache      | Signed-session TTL/logout/restart | No                               |
 | Current request/history copy       | Express request memory                     | One active request                | No                               |
+| Live TDS/SDS extracted text        | Express document cache                     | Configured short TTL/restart      | No                               |
 | Query embedding                    | Express request memory                     | One retrieval operation           | No                               |
-| Bedrock stream buffer              | Express memory                             | One generation                    | No                               |
+| Model response buffer              | Express memory                             | One generation                    | No                               |
 | Prompts/responses in logs          | Nowhere                                    | Never                             | No                               |
 
-Refreshing the browser, clearing the chat, or closing the tab removes the client conversation. Closing/cancelling the request aborts active backend work and releases the request context.
+Refreshing or reconnecting restores the bounded transcript while the signed session and Express process remain active. Clearing chat removes transcript and product-reference context but preserves the three-product-question session quota. Logout removes the in-memory conversation; process restart or session expiry also discards it. Closing/cancelling an active request aborts backend work and rolls back its reserved quota turn.
 
-### 9.2 Amazon Bedrock retention — verified requirement plus deployment control
+### 9.2 Model-provider retention — open production verification
 
-Current AWS Converse documentation states that Bedrock does not store supplied text, images, or documents and uses the content only to generate a response. Current AWS retention documentation also provides explicit account/project retention modes and model-specific allowed modes.
-
-For this MVP’s strict policy:
-
-1. Configure the Bedrock account or project retention mode to `none` where supported.
-2. Verify the selected chat model’s `allowed_modes` includes `none`.
-3. Fail deployment/model smoke validation if the selected model requires retention or provider data sharing.
-4. Do not enable Bedrock prompt caching.
-5. Do not enable invocation logging that includes request or response bodies.
-6. Put only anonymous technical tags in `requestMetadata`, because those tags can appear in invocation logs.
-7. Reconfirm these controls whenever the chat model, inference profile, AWS Region, or Bedrock account changes.
+The current runtime uses Vercel AI Gateway and the configured upstream `minimax/minimax-m3` model. Gateway and upstream-provider retention, training, regional processing, and request-log settings have not yet been recorded as verified in this document. Production launch must validate those settings against the no-persistent-chat policy, disable request/response body logging and prompt caching where applicable, and repeat verification whenever the gateway, model, account, or routing configuration changes.
 
 ### 9.3 Application logging policy — decision
 
@@ -515,7 +511,7 @@ Allowed fields:
 - Cache/index version and age.
 - Configured model identifier.
 - Input/output token totals.
-- Bedrock stop reason.
+- Model/gateway stop reason.
 - Sanitized error class/code.
 - Active socket count and process health.
 
@@ -771,7 +767,20 @@ Use field-aware indexing with strongest weight on:
 4. Product type and market.
 5. Description and TDS prose.
 
-A lightweight library such as MiniSearch is suitable for the corpus size and supports prefix/fuzzy behavior. Chemical formulas, concentrations, grade numbers, and short acronyms must retain exact-token behavior.
+The current MiniSearch index uses OR candidate recall with field boosts, but unrestricted prefix expansion is disabled because short filler terms and words such as `plastic` produced high-scoring false matches such as `plasticizer`. Fuzzy matching is limited to query terms of at least five characters; chemical formulas, concentrations, grade numbers, and short acronyms retain exact-token behavior. Query preparation removes conversational filler and normalizes the compound requirement `BPA-free` to the meaningful token `bpa` instead of independently boosting the generic word `free`.
+
+#### Tier 2a — deterministic requirement-aware reranking
+
+For broad recommendation requests, the normalized 979-product corpus remains available to the retriever, not the model. A small current domain ruleset recognizes these evidence concepts:
+
+- Polymer material, including supported resin/copolyester/polyester/thermoplastic/elastomer wording.
+- Bottle/container application, including direct bottle/container statements and lower-strength blow-molding evidence.
+- Transparency/optical clarity wording.
+- Explicit BPA-free wording; this is a strict claim and is never inferred from a product family.
+
+When the query contains a bottle/container requirement and at least one catalog record has matching application evidence, that evidence gates the final candidates. Remaining products are ordered by weighted requirement coverage, lexical score, and stable name ordering. Near-identical names are greedily diversified so a broad request does not return only Renew percentages or mold-release variants of one base family. Exact FGMN/name questions bypass this recommendation reranker, allowing users to ask directly about any catalog product.
+
+This layer is a precision safeguard while facet memberships and embeddings remain incomplete; it is not a general regulatory classifier. Unsupported requirements remain visible gaps for the grounded answer or Eastman inquiry flow.
 
 #### Tier 3 — semantic retrieval
 
@@ -806,11 +815,13 @@ Recommended ordering rules:
 
 - Exact FGMN/full-name matches dominate.
 - Required metadata filters are applied before final ranking.
+- Supported application requirements gate candidates when product-level catalog evidence exists.
+- Weighted requirement coverage and family diversity refine broad recommendation ordering.
 - Combine lexical and semantic ranks with RRF.
 - Add transparent, bounded boosts for exact facet/grade matches.
 - Deduplicate chunks into product-level scores by FGMN.
 - Keep diverse evidence sections for each selected product.
-- Rerank only a small final set if offline evaluation proves the extra Bedrock call improves quality enough to justify cost/latency.
+- Rerank only a small final set if offline evaluation proves an extra model call improves quality enough to justify cost/latency.
 
 ### 12.4 Explicit region handling — decision
 
@@ -848,19 +859,19 @@ sequenceDiagram
 		participant UI as React client
 		participant WS as Express WebSocket
 		participant RET as In-memory retriever
-		participant BR as Bedrock
+		participant GW as Vercel AI Gateway
 
-		UI->>WS: chat.request + bounded client history
+		UI->>WS: chat.request (current message only)
 		WS->>WS: Validate auth, schema, limits, request ID
 		WS-->>UI: chat.accepted
-		WS->>RET: Exact + lexical + semantic retrieval
-		RET-->>WS: Ranked products, chunks, constraints
+		WS->>RET: Exact + contextual + lexical/fuzzy + requirement reranking
+		RET-->>WS: Ranked products and resolved context
 		WS-->>UI: chat.progress(retrieval_complete)
-		WS->>BR: Grounded ConverseStream request
-		BR-->>WS: Text deltas + usage/stop metadata
-		WS-->>UI: answer.delta events
-		WS->>WS: Validate cited source IDs and FGMNs
-		WS-->>UI: answer.sources/products/comparison
+		WS->>GW: Grounded chat-completion request
+		GW-->>WS: Complete answer + usage metadata
+		WS-->>UI: answer.delta (currently one complete text event)
+		WS->>WS: Build deterministic product/source payloads
+		WS-->>UI: answer.sources/products
 		WS-->>UI: answer.done
 ```
 
@@ -874,16 +885,16 @@ The baseline should not ask the model to decide whether it needs a search tool. 
 - Ensures every catalog answer starts from known evidence.
 - Allows deterministic handling of exact names, FGMNs, filters, and comparisons.
 
-Bedrock tool use remains a future option for more complex workflows, but it is not required for the normal MVP path.
+Model-directed tool use is not part of the current path. The backend performs retrieval and document enrichment before generation.
 
 ### 13.3 Evidence bundle
 
-Provide Bedrock only the bounded evidence needed for the answer:
+Provide the configured gateway model only the bounded evidence needed for the answer:
 
-- User’s current request and bounded history.
+- User’s current request and bounded server-owned history.
 - Resolved intent/constraints.
 - Ranked product records.
-- Relevant TDS/detail chunks with stable source IDs.
+- Relevant catalog summaries and query-aware live TDS/SDS excerpts with stable source metadata.
 - Explicit missing fields.
 - Allowed output/citation rules.
 
@@ -897,11 +908,13 @@ The model must:
 - Cite only supplied source IDs.
 - Distinguish documented facts from explanation.
 - State when a property or comparison value is unavailable.
+- Treat a requested property as satisfied only when current evidence explicitly supports it.
 - Avoid extrapolating from one grade to a related grade.
+- Recommend positively supported matches without narrating rejected candidates unless the user asks for a comparison.
 - Avoid current inventory, pricing, compliance, or suitability claims.
 - Point to official SDS/inquiry resources for safety and final technical decisions.
 
-The server must validate all returned source IDs and product references before the final event. Unsupported references are dropped or the response is replaced with a clarification/no-evidence message.
+The current server prevents model output from controlling product cards and links. Stronger post-generation validation of product names, FGMNs, citations, and numeric prose claims remains pending.
 
 ### 13.5 Deterministic product cards
 
@@ -918,6 +931,8 @@ Cards are assembled by the backend from normalized product data and contain:
 
 ### 13.6 Deterministic comparisons
 
+This is a recommended future improvement; `answer.comparison` is not implemented yet.
+
 - Resolve two to four products by exact identity where possible.
 - Select common sourced fields and property groups.
 - Keep source value, unit, test method, and note together.
@@ -925,148 +940,76 @@ Cards are assembled by the backend from normalized product data and contain:
 - Do not compare values produced under different methods without a visible warning.
 - Let the model summarize tradeoffs only after the table data is fixed by the server.
 
-## 14. Amazon Bedrock integration
+## 14. Vercel AI Gateway integration
 
-### 14.1 SDK and APIs — verified/recommended
+### 14.1 Implemented client
 
-Use AWS SDK for JavaScript v3 package `@aws-sdk/client-bedrock-runtime`.
+`Backend/src/vercel-ai-gateway/client.js` uses `fetch` to call the OpenAI-compatible `/chat/completions` endpoint with:
 
-| Purpose                                   | Command                 | IAM action                              |
-| ----------------------------------------- | ----------------------- | --------------------------------------- |
-| Streaming chat                            | `ConverseStreamCommand` | `bedrock:InvokeModelWithResponseStream` |
-| Nonstreaming smoke/tool request if needed | `ConverseCommand`       | `bedrock:InvokeModel`                   |
-| Titan embedding                           | `InvokeModelCommand`    | `bedrock:InvokeModel`                   |
+- Bearer authentication from `VERCEL_AI_GATEWAY_API_KEY`.
+- The model configured by `VERCEL_AI_GATEWAY_MODEL`, defaulting to `minimax/minimax-m3`.
+- A system message, bounded server-owned product history, and the current user request plus retrieval-plan/evidence JSON.
+- The request-scoped `AbortSignal` so cancellation or socket closure stops the gateway request.
 
-Converse provides a normalized message interface across supported models. The embedding endpoint remains model-specific.
+The client expects `choices[0].message.content` and optional usage metadata. It does not currently request streaming, so the complete model response is emitted through one `answer.delta` event.
 
-### 14.2 ConverseStream event order — verified
+### 14.2 Grounded request policy
 
-1. `messageStart` once.
-2. For each content block:
-   - `contentBlockStart` for tool-use blocks.
-   - One or more `contentBlockDelta` events for text, reasoning, or partial tool JSON.
-   - `contentBlockStop`.
-3. `messageStop` once, including `stopReason`.
-4. `metadata` once, including usage and latency metrics.
+- Product selection occurs before generation through exact, contextual, lexical/fuzzy, and deterministic requirement-aware retrieval.
+- One to three selected products are enriched with query-relevant TDS evidence; SDS evidence is added only for safety intent.
+- The full `productfinder.json` and unselected catalog candidates are never placed in the model request.
+- The model may explain only the supplied products/evidence and must preserve names and FGMNs.
+- Conversation history is context, not factual authority; the current evidence bundle controls technical claims.
+- Product cards and official links are produced from server records, not model output.
+- Social/scope messages and no-evidence responses do not need a model call.
 
-Use `contentBlockIndex` to assemble blocks. Only stream text deltas intended for the answer; never expose hidden reasoning content.
+### 14.3 Error, cancellation, and retry behavior
 
-### 14.3 Titan Text Embeddings V2 — verified baseline
+- Non-2xx responses raise `VercelAIGatewayError` with sanitized status/code metadata.
+- HTTP `429` and `5xx` responses are marked retryable; other statuses are non-retryable.
+- The orchestrator does not yet implement an application-level deadline or pre-output retry loop.
+- Cancellation, socket closure, and session expiry abort active work; failed/cancelled requests roll back the reserved product turn.
+- A disconnected client is never automatically replayed after reconnect.
 
-- Model ID: `amazon.titan-embed-text-v2:0`.
-- Maximum input: 8,192 tokens or 50,000 characters.
-- Output dimensions: 1,024 by default; 512 and 256 are supported options.
-- Retrieval documents should still be split into logical sections.
-- Quotas are governed by requests per minute, not tokens per minute.
-- Cross-language retrieval may be weaker than same-language retrieval; English is the MVP language.
+### 14.4 Open provider controls
 
-Recommended model-specific request body:
-
-```json
-{
-  "inputText": "Normalized product or query text",
-  "dimensions": 512,
-  "normalize": true
-}
-```
-
-The `512` dimension is a starting recommendation for compact in-memory retrieval, not a locked choice. Benchmark 512 against 1,024 before finalizing artifacts. Do not assume one InvokeModel request accepts an arbitrary array of texts; use bounded single-input calls or an AWS-supported batch inference workflow.
-
-### 14.4 Chat model selection — open deployment value
-
-No exact chat model has been selected. Keep the model or inference profile in `BEDROCK_CHAT_MODEL_ID`.
-
-Selection criteria:
-
-- Available and authorized in the chosen AWS account/Region.
-- Supports Converse and response streaming.
-- Supports the required zero-retention mode.
-- Strong grounded summarization and comparison quality.
-- Acceptable latency and cost on the project’s benchmark set.
-- Tool use is optional, not a baseline requirement.
-
-Evaluate at least one lower-cost/latency Amazon Nova option and one approved higher-quality option. Do not commit an unavailable or deprecated model ID to source code.
-
-### 14.5 Model access — verified operational requirement
-
-- Validate the configured model or inference profile at deployment.
-- Check whether response streaming is supported.
-- Third-party models can require one-time Marketplace/EULA enablement.
-- Anthropic models can require first-time use-case details.
-- Marketplace subscription permissions belong to a deployment administrator, not the EC2 runtime role.
-- After access is established, the runtime role should retain inference permissions only.
-
-### 14.6 Error and retry behavior
-
-| Error class/status                     | Runtime behavior                                                               |
-| -------------------------------------- | ------------------------------------------------------------------------------ |
-| `ValidationException` / 400            | Do not retry; log sanitized schema/config code                                 |
-| `AccessDeniedException` / 403          | Do not retry blindly; fail readiness/smoke validation and fix IAM/model access |
-| `ResourceNotFoundException` / 404      | Do not retry; verify model/profile ID and Region                               |
-| `ModelTimeoutException` / 408          | Retry only before output begins and within total request deadline              |
-| `ThrottlingException` / 429            | Capped exponential backoff with jitter; respect quotas                         |
-| `ModelNotReadyException` / 429         | SDK may retry automatically; cap total request deadline                        |
-| Model stream error / 424               | If output started, terminate with a retryable UI error; do not silently replay |
-| Internal/service unavailable / 500/503 | Retry only before output begins; otherwise return a recoverable error          |
-
-Use SDK retry configuration plus an application-level total deadline. Avoid stacked retry loops that multiply attempts.
-
-### 14.7 Cancellation
-
-- Create an `AbortController` per active request.
-- Pass its signal through AWS SDK calls and retrieval work where supported.
-- Abort on `chat.cancel`, socket close, request timeout, or a new request superseding the active one.
-- Stop reading the Bedrock async stream immediately.
-- Never continue accumulating an answer for a disconnected client.
-
-### 14.8 EC2 IAM — decision/recommendation
-
-Use an EC2 instance profile and the SDK default credential provider chain. Do not place `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` in `.env` on EC2.
-
-Runtime actions:
-
-```json
-["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-```
-
-Scope resources to the selected foundation models and/or inference profiles where IAM supports it. If an inference profile routes to underlying models, validate all required resource ARNs with IAM policy simulation. Add SSM and CloudWatch permissions separately and narrowly.
+Before launch validation, document and verify Vercel AI Gateway and upstream-model retention/training settings, request-log controls, regional processing, model availability, rate limits, latency, and cost. Do not put the API key in frontend code, browser storage, logs, or repository files.
 
 ## 15. Runtime configuration
 
 ### Recommended backend environment schema
 
-| Variable                          | Classification      | Purpose                                         |
-| --------------------------------- | ------------------- | ----------------------------------------------- |
-| `NODE_ENV`                        | Nonsecret           | `development`, `test`, or `production`          |
-| `PORT`                            | Nonsecret           | Loopback Express port, default `3000`           |
-| `APP_ORIGIN`                      | Nonsecret           | Exact allowed HTTPS browser origin              |
-| `MVP_ACCESS_CODE`                 | Secret              | Shared test access code                         |
-| `COOKIE_SIGNING_SECRET`           | Secret              | High-entropy HMAC/signing secret                |
-| `AUTH_COOKIE_NAME`                | Nonsecret           | Cookie name                                     |
-| `AUTH_TTL_SECONDS`                | Nonsecret           | Short auth-cookie lifetime                      |
-| `AWS_REGION`                      | Nonsecret           | Bedrock runtime Region                          |
-| `BEDROCK_CHAT_MODEL_ID`           | Nonsecret/open      | Authorized model or inference profile ID/ARN    |
-| `BEDROCK_EMBEDDING_MODEL_ID`      | Nonsecret           | Default `amazon.titan-embed-text-v2:0`          |
-| `BEDROCK_EMBEDDING_DIMENSIONS`    | Nonsecret           | `256`, `512`, or `1024`; selected by evaluation |
-| `BEDROCK_MAX_TOKENS`              | Nonsecret           | Maximum generated answer tokens                 |
-| `BEDROCK_TEMPERATURE`             | Nonsecret           | Low grounded-generation temperature             |
-| `BEDROCK_REQUEST_TIMEOUT_MS`      | Nonsecret           | Total generation deadline                       |
-| `BEDROCK_GUARDRAIL_ID`            | Optional nonsecret  | Optional approved guardrail ID/ARN              |
-| `BEDROCK_GUARDRAIL_VERSION`       | Optional nonsecret  | Required with guardrail ID                      |
-| `BEDROCK_EXPECTED_RETENTION_MODE` | Nonsecret assertion | Must be `none` for this MVP                     |
-| `EASTMAN_PRODUCT_FINDER_URL`      | Nonsecret           | Verified component endpoint                     |
-| `CORPUS_ARTIFACT_DIR`             | Nonsecret           | Path containing the active release pointer      |
-| `CORPUS_WARN_AGE_HOURS`           | Nonsecret           | Freshness warning threshold                     |
-| `INGEST_CONCURRENCY`              | Nonsecret           | Bounded per-host fetch concurrency              |
-| `INGEST_TIMEOUT_MS`               | Nonsecret           | Per-source fetch timeout                        |
-| `CHAT_MAX_MESSAGE_CHARS`          | Nonsecret           | Input size limit                                |
-| `CHAT_MAX_HISTORY_TURNS`          | Nonsecret           | Bounded client history                          |
-| `CHAT_MAX_HISTORY_CHARS`          | Nonsecret           | Total history size limit                        |
-| `WS_MAX_PAYLOAD_BYTES`            | Nonsecret           | WebSocket frame/message cap                     |
-| `WS_HEARTBEAT_MS`                 | Nonsecret           | Ping interval below proxy idle timeout          |
-| `LOG_LEVEL`                       | Nonsecret           | Structured log level                            |
+| Variable                     | Classification | Purpose                                    |
+| ---------------------------- | -------------- | ------------------------------------------ |
+| `NODE_ENV`                   | Nonsecret      | `development`, `test`, or `production`     |
+| `PORT`                       | Nonsecret      | Loopback Express port, default `3000`      |
+| `APP_ORIGIN`                 | Nonsecret      | Exact allowed HTTPS browser origin         |
+| `MVP_ACCESS_CODE`            | Secret         | Shared test access code                    |
+| `COOKIE_SIGNING_SECRET`      | Secret         | High-entropy HMAC/signing secret           |
+| `AUTH_COOKIE_NAME`           | Nonsecret      | Cookie name                                |
+| `AUTH_TTL_SECONDS`           | Nonsecret      | Short auth-cookie lifetime                 |
+| `AI_PROVIDER`                | Nonsecret      | Fixed to `vercel` for the current MVP      |
+| `VERCEL_AI_GATEWAY_API_KEY`  | Secret         | Server-only Vercel AI Gateway credential   |
+| `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `minimax/minimax-m3`                |
+| `VERCEL_AI_GATEWAY_BASE_URL` | Nonsecret      | Gateway API base URL                       |
+| `EASTMAN_PRODUCT_FINDER_URL` | Nonsecret      | Verified component endpoint                |
+| `CORPUS_ARTIFACT_DIR`        | Nonsecret      | Path containing the active release pointer |
+| `CORPUS_WARN_AGE_HOURS`      | Nonsecret      | Freshness warning threshold                |
+| `INGEST_CONCURRENCY`         | Nonsecret      | Bounded per-host fetch concurrency         |
+| `INGEST_TIMEOUT_MS`          | Nonsecret      | Per-source fetch timeout                   |
+| `CHAT_MAX_MESSAGE_CHARS`     | Nonsecret      | Input size limit                           |
+| `CHAT_MAX_PRODUCT_TURNS`     | Nonsecret      | Product questions before contact handoff   |
+| `CHAT_MAX_HISTORY_TURNS`     | Nonsecret      | Bounded server-owned history entries       |
+| `CHAT_MAX_HISTORY_CHARS`     | Nonsecret      | Total server-owned history size limit      |
+| `DOCUMENT_FETCH_TIMEOUT_MS`  | Nonsecret      | Per-document live fetch deadline           |
+| `DOCUMENT_CACHE_TTL_SECONDS` | Nonsecret      | Public TDS/SDS in-process cache TTL        |
+| `WS_MAX_PAYLOAD_BYTES`       | Nonsecret      | WebSocket frame/message cap                |
+| `WS_HEARTBEAT_MS`            | Nonsecret      | Ping interval below proxy idle timeout     |
+| `LOG_LEVEL`                  | Nonsecret      | Structured log level                       |
 
 Production secrets belong in SSM Parameter Store, Secrets Manager, or a root-readable systemd environment file. Commit only `.env.example` placeholders.
+
+Current defaults are three substantive product turns, ten server-history entries, and 20,000 server-history characters. Only substantive user/assistant exchanges enter model history; social/scope responses remain available in the UI transcript without crowding out product context.
 
 For a same-origin production deployment, the frontend should use relative `/api/...` paths and derive `wss://` from `window.location`; it should not need a public backend secret or separate production API origin.
 
@@ -1089,15 +1032,15 @@ The browser supplies the signed auth cookie automatically during the same-origin
   "type": "chat.request",
   "requestId": "client-generated-uuid",
   "message": "Compare AdapT 100 and AdapT 201 for my use case",
-  "history": [
-    { "role": "user", "content": "Earlier bounded message" },
-    { "role": "assistant", "content": "Earlier bounded answer" }
-  ],
   "region": null
 }
 ```
 
-The server must not trust `region` unless it is supported by the current message/history or explicitly selected after user input. Product/source structures from the client are references only and must be resolved again server-side.
+The server owns bounded history and recent product context; a client-supplied `history` field is rejected. The server must not trust `region` unless it is supported by the current message/server history or explicitly selected after user input. Product/source structures from the client are references only and must be resolved again server-side.
+
+#### `chat.clear`
+
+Clears the server-owned transcript and recent product-reference context while preserving the signed session's product-question quota.
 
 #### `chat.cancel`
 
@@ -1110,30 +1053,34 @@ The server must not trust `region` unless it is supported by the current message
 
 ### 16.3 Server events — recommendation
 
-| Event               | Purpose                                                                       |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `connection.ready`  | Authenticated socket is ready; includes protocol version and corpus version   |
-| `chat.accepted`     | Request ID accepted after validation                                          |
-| `chat.progress`     | Safe stage update such as understanding, retrieving, grounding, or generating |
-| `answer.delta`      | Streamed display-text fragment                                                |
-| `answer.sources`    | Validated citation metadata                                                   |
-| `answer.products`   | Deterministic product cards                                                   |
-| `answer.comparison` | Optional deterministic comparison model                                       |
-| `answer.done`       | Stop reason and safe technical usage metadata                                 |
-| `error`             | Structured recoverable/fatal error with safe user message                     |
+| Event                   | Purpose                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `connection.ready`      | Authenticated socket is ready; advertises protocol version `2` and corpus version |
+| `conversation.snapshot` | Restores bounded messages and quota after connection/reconnection                 |
+| `chat.accepted`         | Request ID accepted after validation                                              |
+| `chat.progress`         | Safe stage update such as understanding, retrieving, grounding, or generating     |
+| `answer.delta`          | Display text; currently the complete answer in one event                          |
+| `answer.sources`        | Validated citation metadata                                                       |
+| `answer.products`       | Deterministic product cards                                                       |
+| `answer.comparison`     | Optional deterministic comparison model                                           |
+| `answer.done`           | Stop reason and safe technical usage metadata                                     |
+| `error`                 | Structured recoverable/fatal error with safe user message                         |
 
 Every request-scoped event contains `requestId`. Include a protocol version in the ready event to allow future evolution.
 
 ### 16.4 Connection behavior
 
-- One active generation per socket for MVP.
+- One active generation per signed session for MVP, including across multiple sockets.
+- Greetings, gratitude, capability questions, goodbyes, and obvious out-of-scope requests receive deterministic local responses without retrieval, document fetches, model calls, or quota use.
+- The first three substantive product requests use grounded orchestration; the fourth receives deterministic official Eastman product-inquiry guidance.
 - A new request either waits or explicitly cancels the active request; it never races silently.
 - Use native ping/pong frames to detect dead clients.
+- Close an active socket when its signed session expires and periodically prune expired in-memory conversations.
 - Heartbeat interval must remain below Nginx `proxy_read_timeout`.
-- Enforce payload and decoded-history limits before allocating large buffers.
+- Enforce payload limits before allocating large buffers and bound server history by entry and character count.
 - Pause/terminate when WebSocket buffered output exceeds a safe threshold.
 - Reconnect with capped exponential backoff.
-- Never automatically resend a generation after reconnect; let the user explicitly retry to avoid duplicate Bedrock cost and conflicting answers.
+- Never automatically resend a generation after reconnect; let the user explicitly retry to avoid duplicate model cost and conflicting answers.
 
 ## 17. Backend design
 
@@ -1164,7 +1111,7 @@ Do not expose a public refresh endpoint in the MVP; use an operator CLI or syste
 - Rank fusion/metadata filters.
 - Region parser.
 - Evidence and citation builder.
-- Bedrock chat/embedding adapter.
+- Vercel AI Gateway generation adapter.
 - Deterministic product/comparison presenter.
 - Structured redacted logging.
 - Health/readiness reporting.
@@ -1172,15 +1119,12 @@ Do not expose a public refresh endpoint in the MVP; use an operator CLI or syste
 ### Recommended backend dependencies
 
 - `ws` — native WebSocket server.
-- `@aws-sdk/client-bedrock-runtime` — Converse and embedding inference.
 - `zod` — environment, artifact, HTTP, and WebSocket schemas.
 - `cookie` — cookie parsing/serialization; signing can use Node `crypto`.
 - `helmet` — Express security headers not already handled by Nginx.
 - `express-rate-limit` — MVP login/API throttling.
-- `pino` — structured logging with explicit redaction.
-- `cheerio` or another maintained server HTML parser — ingestion normalization.
+- `cheerio` — live TDS/SDS selector HTML normalization.
 - `minisearch` — compact in-memory lexical/fuzzy retrieval.
-- `p-limit` — bounded ingestion/embedding concurrency.
 - A current test runner plus `supertest`; choose one test stack consistently.
 
 Dependencies and versions must be installed from current supported releases during implementation rather than copied from this research document.
@@ -1197,13 +1141,13 @@ Dependencies and versions must be installed from current supported releases duri
 ### 18.2 Chat shell
 
 - Eastman-oriented product-discovery title and short capability statement.
-- Visible privacy notice: conversation stays in this tab and disappears on refresh/clear.
+- Visible privacy notice: conversation is held temporarily in server memory for the signed-session lifetime and is not persisted.
 - Starter prompts for finding a product, asking a technical question, and comparing products.
 - Multiline composer, Enter-to-send with Shift+Enter newline, send/cancel button, and input limits.
 - Connection/reconnection state and retry control.
 - Stage-based progress before the first answer token.
-- Streaming answer with non-jarring updates.
-- Clear/new-chat control that removes React history immediately.
+- Non-jarring answer/progress updates; token-level model streaming remains pending.
+- Clear-chat control that removes server and React transcript context while preserving session quota.
 
 ### 18.3 Product cards
 
@@ -1265,7 +1209,7 @@ Use React state/reducer/context for the MVP instead of adding a global state lib
 - Nginx serves `Frontend/dist`.
 - Express listens on `127.0.0.1:3000`.
 - Nginx proxies `/api/` and `/ws/chat` to Express.
-- Express accesses Bedrock through an EC2 instance profile.
+- Express accesses Vercel AI Gateway over outbound HTTPS with a server-only credential loaded from the SSM-backed runtime environment.
 - Scheduled ingestion runs as a separate oneshot process and publishes artifacts locally.
 
 ### 19.2 Instance baseline — recommendation/open value
@@ -1280,7 +1224,7 @@ Use React state/reducer/context for the MVP instead of adding a global state lib
 
 - Security group inbound: 80 for redirect/certificate flow and 443 for application traffic.
 - Prefer no public port 22; use SSM Session Manager. If SSH remains, restrict it to approved administrator IP ranges.
-- Outbound HTTPS is required for Bedrock, Eastman sources, packages, and telemetry.
+- Outbound HTTPS is required for Vercel AI Gateway, Eastman sources, packages, and telemetry.
 - Attach an EC2 instance profile; never copy developer AWS credentials to the host.
 - The user currently has AWS CLI/terminal access for provisioning, but operational access should still be auditable and least privileged.
 
@@ -1345,7 +1289,7 @@ The Express user needs read access to active artifacts but no write access to re
 2. Build candidate corpus artifacts or reuse a validated existing release.
 3. Upload/extract into a versioned release directory.
 4. Install production dependencies reproducibly.
-5. Run configuration, corpus, Bedrock access/retention, and link smoke checks.
+5. Run configuration, corpus, gateway access/retention, and link smoke checks.
 6. Atomically update application and artifact pointers.
 7. Restart/reload services and verify readiness/WSS.
 8. Keep previous application and corpus releases.
@@ -1359,7 +1303,7 @@ Optional versioned S3 artifact backup can be added later for disaster recovery; 
 
 #### Liveness
 
-Checks only that the Node process/event loop can respond. It must not call Eastman or Bedrock.
+Checks only that the Node process/event loop can respond. It must not call Eastman or the model gateway.
 
 #### Readiness
 
@@ -1377,8 +1321,8 @@ A stale but valid known-good corpus may report `degraded` while continuing to se
 
 Separate from continuous health checks:
 
-- Verify configured Bedrock chat model access and streaming support.
-- Verify retention mode/model compatibility.
+- Verify configured Vercel AI Gateway model access and response schema.
+- Verify gateway/upstream retention and logging compatibility.
 - Run one minimal generation and embedding request.
 - Verify a local retrieval query and WSS exchange.
 
@@ -1391,7 +1335,7 @@ Collect without user content:
 - Active WebSockets and abnormal closes.
 - Requests accepted/cancelled/completed/failed.
 - Retrieval latency, candidate count, and outcome class.
-- Bedrock first-event/total latency, token totals, stop reasons, throttles, and errors.
+- Gateway total latency, token totals, stop reasons, throttles, and errors.
 - Corpus version, age, load duration, product/chunk count.
 - Ingestion duration, changed products/chunks, failed sources, and activation success.
 - CPU, memory, event-loop lag, disk usage, and process restarts.
@@ -1402,7 +1346,7 @@ Recommended alarms:
 
 - Backend restart loop or readiness failure.
 - Sustained 5xx/error rate.
-- Repeated Bedrock access/throttle failures.
+- Repeated gateway/model access or throttle failures.
 - Corpus refresh failures or excessive age.
 - Disk or memory pressure.
 - Certificate expiry.
@@ -1424,6 +1368,7 @@ Use a short explicit CloudWatch log-retention policy. Logs are operational metad
 - Region alias resolution and no-region behavior.
 - Exact product/FGMN matching.
 - Lexical scoring, vector similarity, RRF, and deduplication.
+- Requirement extraction, application gating, strict unsupported-property handling, and product-family diversification.
 - Confidence decision rules.
 - TDS section/table parsing with malformed and missing fields.
 - Citation and deterministic card/comparison construction.
@@ -1435,9 +1380,9 @@ Use a short explicit CloudWatch log-retention policy. Logs are operational metad
 
 - Login → cookie → authenticated WebSocket upgrade.
 - Invalid/expired cookie and cross-origin rejection.
-- Chat request → retrieval → mocked Bedrock stream → final typed events.
+- Chat request → contextual retrieval → mocked gateway completion → final typed events.
 - Cancellation, disconnect, timeout, backpressure, and one-active-request behavior.
-- Bedrock validation/access/throttle/mid-stream error mapping.
+- Gateway validation/access/throttle/error mapping.
 - Candidate artifact validation and atomic swap.
 - Failed refresh preserving previous known-good artifacts.
 - Server restart loading the active release.
@@ -1468,6 +1413,7 @@ Create a versioned benchmark set containing:
 - Region-stated and region-absent requests.
 - Two- and multi-product comparisons.
 - Questions with missing evidence.
+- Multi-constraint recommendation queries where a generic material word must not outweigh the requested application, including the transparent BPA-free plastic-bottle regression.
 - Off-topic, prompt-injection, compliance, safety, pricing, and inventory requests.
 
 Measure at minimum:
@@ -1478,14 +1424,14 @@ Measure at minimum:
 - Citation validity and claim support.
 - Clarification precision.
 - Unsupported-claim rate.
-- End-to-end latency and Bedrock token use from actual test runs.
+- End-to-end latency and gateway token use from actual test runs.
 
 Do not claim performance targets as achieved until measured on the deployed hardware/model.
 
 ### 21.5 Frontend and end-to-end tests
 
 - Auth gate keyboard/error flow.
-- In-memory-only history and clear/refresh behavior.
+- In-memory-only server history, reconnect restoration, logout deletion, and clear behavior.
 - Streaming, cancellation, retry, reconnect, and no duplicate resend.
 - Product links and conditional actions.
 - Comparison responsiveness.
@@ -1500,7 +1446,7 @@ Do not claim performance targets as achieved until measured on the deployed hard
 - Confirm no AWS keys exist on disk or in repository history.
 - Confirm WebSocket cross-origin attempts fail.
 - Confirm external links cannot escape the allowlist.
-- Confirm Bedrock account/project retention and selected-model allowed mode at deployment.
+- Confirm Vercel AI Gateway and upstream-model retention/logging settings at deployment.
 
 ## 22. Recommended repository structure
 
@@ -1516,7 +1462,7 @@ AI-Product-Finder/
 │   │   ├── auth/
 │   │   ├── http/
 │   │   ├── websocket/
-│   │   ├── bedrock/
+│   │   ├── vercel-ai-gateway/
 │   │   ├── corpus/
 │   │   ├── retrieval/
 │   │   ├── grounding/
@@ -1574,7 +1520,7 @@ remains in Phase D, and ingestion/artifact schemas remain in Phase B.
 - Normalize products and canonical links.
 - Parse representative TDS layouts, then expand coverage.
 - Generate semantic chunks and manifests.
-- Add incremental Titan embedding generation.
+- Add incremental embedding generation after selecting and benchmarking a provider/model.
 - Validate and atomically publish artifacts.
 
 ### Phase C — retrieval
@@ -1590,23 +1536,36 @@ Minimal Phase C implementation started on 2026-08-30. Exact and lexical retrieva
 generic in-memory vector search, RRF, region recognition, source building, and a
 real-corpus benchmark are implemented. Semantic retrieval remains inactive until
 Phase B produces embeddings, and region filtering remains clarification-only until
-facet memberships are complete. The MVP generation provider is configured as
-OpenRouter's `openrouter/free` router; chat orchestration remains Phase D.
+facet memberships are complete. The MVP generation provider is Vercel AI Gateway
+with `minimax/minimax-m3`; chat orchestration is implemented in Phase D.
+
+On 2026-09-02, broad recommendations gained deterministic requirement-aware
+reranking and product-family diversification. The reported transparent BPA-free
+plastic-bottle query now returns actual clear bottle/container copolyesters and
+excludes Benzoflex 9-88, AQ 38S, and DuraStar MN610. Exact product questions still
+bypass recommendation reranking. The active-corpus benchmark now covers four cases.
 
 ### Phase D — backend/chat
 
 - Express app/server split.
 - Static-code auth and signed cookie.
 - WebSocket upgrade/protocol/heartbeat.
-- Bedrock adapters, deadline, cancellation, and error mapping.
+- Vercel AI Gateway adapter, deadline, cancellation, and error mapping.
 - Evidence prompt, citation validation, deterministic products/comparison.
 
-Minimal Phase D implementation started on 2026-08-30 using the approved MVP
-OpenRouter provider instead of Bedrock. The HTTP/auth foundation, authenticated
+Minimal Phase D implementation started on 2026-08-30 using Vercel AI Gateway.
+The HTTP/auth foundation, authenticated
 WebSocket lifecycle, retrieval-first evidence prompt, cancellation, heartbeat,
 request limits, and deterministic product/source events are implemented. Streaming,
 provider-retention validation, observability, and deterministic comparisons remain.
+
 - Redacted operational logging and health endpoints.
+
+On 2026-09-01, chat context moved from client-supplied history to bounded per-session
+Express memory. Signed-session reconnects restore transcripts; logout, expiry, or a
+process restart removes them. Deterministic social/scope handling, validated recent-
+product follow-ups, ordinal/pronoun references, contextual alternative searches,
+three substantive product turns, and fourth-turn Eastman inquiry handoff are implemented.
 
 ### Phase E — frontend
 
@@ -1617,10 +1576,14 @@ provider-retention validation, observability, and deterministic comparisons rema
 - Product cards, source chips, comparison table, clarifications.
 - Responsive and accessible visual design.
 
-Minimal Phase E implementation started on 2026-08-30. The access gate, local-only
+Minimal Phase E implementation started on 2026-08-30. The access gate, server-backed
 chat shell, reconnect/cancellation behavior, product/source presentation, responsive
 styles, accessibility baseline, and frontend logic tests are implemented.
 Comparison tables and structured clarification controls await matching backend events.
+
+On 2026-09-01, the frontend stopped sending history and became a rendering cache for
+server snapshots. It now restores conversations after reconnect, displays remaining
+guided product questions, clears server context, and locks the composer after handoff.
 
 ### Phase F — AWS deployment
 
@@ -1645,49 +1608,50 @@ Phase F's minimal production scope was completed on 2026-08-30. The private
 GitHub repository deploys through immutable-subject OIDC to the production
 environment, which is restricted to `main`. The EC2 release is healthy at
 `https://samvad.space`; HTTP redirect, access-code authentication, WSS,
-retrieval, OpenRouter generation, deterministic evidence events, CloudWatch,
+retrieval, Vercel AI Gateway generation, deterministic evidence events, CloudWatch,
 cross-version rollback, and a Let's Encrypt renewal dry-run were verified.
 
 ### Phase G — launch validation
 
 - Run all automated suites.
 - Run live Eastman contract checks.
-- Run Bedrock and WSS smoke checks.
+- Run Vercel AI Gateway and WSS smoke checks.
 - Run retrieval quality and accessibility review.
 - Run no-retention/security audit.
 - Record measured latency, capacity, cost, and known limitations.
 
 ## 24. Risks and mitigations
 
-| Risk                                       | Mitigation                                                                                    |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Eastman changes/removes public endpoint    | Schema validation, versioned known-good artifact, alert, fallback snapshot                    |
-| Facet counts/memberships drift             | Scheduled reconstruction and discrepancy report                                               |
-| TDS parser silently loses fields           | Layout fixtures, required provenance, parse-coverage report, fail candidate thresholds        |
-| Bad or unusual slugs                       | Store canonical authored links, validate hosts, generated slug only as fallback               |
-| Hallucinated product/specification         | Candidate allowlist, source IDs, deterministic cards/tables, output validation                |
-| Prompt injection in source pages           | Sanitize, delimit as data, system instruction hierarchy, no source-controlled tools           |
-| Region mistaken for inventory              | Explicit-only filter and visible distributor-availability disclaimer                          |
-| SDS becomes stale or wrong locale          | Link stable selector only; no final SDS cache                                                 |
-| Bedrock model unavailable/retaining data   | Deployment access/streaming/allowed-mode checks; configurable model                           |
-| Duplicate generation after network failure | No automatic replay after stream starts or reconnect                                          |
-| Shared code brute force/leak               | TLS, rate limit, constant-time compare, short signed cookie, no logging/storage               |
-| Chat content enters logs/APM               | Explicit allowlist logging, redaction tests, body capture disabled                            |
-| Single EC2 outage                          | Documented MVP limitation, systemd restart, backups and rollback; add ALB/ASG later if needed |
-| Ingestion corrupts live index              | Candidate validation and atomic pointer swap                                                  |
-| Memory/cost surprises                      | Compact vectors, bounded context/candidates, metrics, load and token testing                  |
+| Risk                                        | Mitigation                                                                                    |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Eastman changes/removes public endpoint     | Schema validation, versioned known-good artifact, alert, fallback snapshot                    |
+| Facet counts/memberships drift              | Scheduled reconstruction and discrepancy report                                               |
+| TDS parser silently loses fields            | Layout fixtures, required provenance, parse-coverage report, fail candidate thresholds        |
+| Bad or unusual slugs                        | Store canonical authored links, validate hosts, generated slug only as fallback               |
+| Hallucinated product/specification          | Candidate allowlist, source IDs, deterministic cards/tables, output validation                |
+| Prompt injection in source pages            | Sanitize, delimit as data, system instruction hierarchy, no source-controlled tools           |
+| Region mistaken for inventory               | Explicit-only filter and visible distributor-availability disclaimer                          |
+| SDS becomes stale or wrong locale           | Link stable selector only; no final SDS cache                                                 |
+| Gateway/model unavailable or retaining data | Deployment access/retention/logging checks; configurable model                                |
+| Duplicate generation after network failure  | No automatic replay after stream starts or reconnect                                          |
+| Shared code brute force/leak                | TLS, rate limit, constant-time compare, short signed cookie, no logging/storage               |
+| Chat content enters logs/APM                | Explicit allowlist logging, redaction tests, body capture disabled                            |
+| Single EC2 outage                           | Documented MVP limitation, systemd restart, backups and rollback; add ALB/ASG later if needed |
+| Multiple Node processes split chat context  | Keep one process for MVP; otherwise use sticky routing or a shared TTL store/pub-sub          |
+| Ingestion corrupts live index               | Candidate validation and atomic pointer swap                                                  |
+| Memory/cost surprises                       | Compact vectors, bounded context/candidates, metrics, load and token testing                  |
 
 ## 25. Open deployment values
 
 Resolve these before production deployment:
 
 1. AWS account and Region.
-2. Chat model or inference profile ID after quality/cost/retention evaluation.
-3. Titan output dimensions after retrieval evaluation.
-4. Bedrock guardrail use and identifier/version, if adopted.
+2. Gateway model ID after quality/cost/retention evaluation.
+3. Future embedding provider, model, and dimensions after retrieval evaluation.
+4. Gateway/upstream safety controls, if adopted.
 5. Public/internal domain and certificate method.
 6. Auth-cookie lifetime and exact cookie name.
-7. Message/history/token limits and total Bedrock deadline.
+7. Message/history/token limits and total gateway deadline.
 8. Nginx timeouts and WebSocket heartbeat interval.
 9. Corpus freshness warning/failure policy.
 10. Exact ingestion cadence/concurrency approved for Eastman sources.
@@ -1738,11 +1702,26 @@ Resolve these before production deployment:
 - Verified representative detail/TDS structures and SDS locale/expiry behavior.
 - Reviewed current official Bedrock Converse, streaming, embedding, model-access, IAM, data-protection, and data-retention documentation.
 - Reviewed official Nginx WebSocket proxy requirements.
-- Recorded user decisions: Bedrock, client-memory-only chat, EC2/Nginx, explicit-only region handling, no database, and no persistent chat retention.
+- Recorded the original discovery decisions (later revised where noted): Bedrock, client-memory-only chat, EC2/Nginx, explicit-only region handling, no database, and no persistent chat retention.
+
+### 2026-09-01
+
+- Replaced client-authoritative history with bounded, anonymous, per-session Express memory while preserving the no-persistent-retention policy.
+- Added deterministic greeting/courtesy/capability/scope handling, contextual follow-up retrieval, reconnect snapshots, a three-product-turn limit, and official Eastman inquiry handoff.
+- Added socket expiry enforcement, periodic expired-context pruning, logout deletion, and quota rollback for cancellation or failed generation.
+- Verified 40 backend tests, 5 frontend tests, frontend lint/build, and the active-corpus retrieval benchmark.
+
+### 2026-09-02
+
+- Reproduced the transparent BPA-free plastic-bottle query against the active 979-product corpus and traced irrelevant results to unrestricted prefix expansion, conversational filler, generic OR matches, and absent facet memberships.
+- Disabled prefix expansion, restricted fuzzy matching to terms of at least five characters, expanded query stopwords, and normalized `BPA-free` without treating generic `free` as an independent requirement signal.
+- Added deterministic polymer/container/transparency/BPA requirement scoring, direct-application gating, and near-duplicate product-family diversification before generation.
+- Added an exact-query unit regression and active-corpus benchmark case; the resulting shortlist starts with Eastman Cristal One, Eastman Cristal EB062 copolyester, and Eastar MB002 copolyester while excluding the three reported false positives.
+- Verified 42 backend tests, the 4/4 active-corpus retrieval benchmark, 5 frontend tests, frontend lint/build, editor diagnostics, and Git diff integrity.
 
 ### Maintenance rule
 
-Whenever the corpus, endpoint behavior, AWS model, retention setting, deployment, or protocol changes:
+Whenever the corpus, endpoint behavior, gateway/model, retention setting, deployment, or protocol changes:
 
 1. Update the `Last verified` date.
 2. Record the source/check performed.

@@ -11,7 +11,7 @@ class VercelAIGatewayError extends Error {
 class VercelAIGatewayClient {
   constructor({
     apiKey,
-    model = 'zai/glm-5.3-flash',
+    model = 'minimax/minimax-m3',
     baseUrl = 'https://ai-gateway.vercel.sh/v1',
     fetchImpl = fetch,
   }) {

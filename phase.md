@@ -65,7 +65,7 @@ Completed:
   recommendation, clarification, and no evidence.
 - Added active-release loading and real-corpus retrieval regression benchmarks.
 - Replaced OpenRouter with Vercel AI Gateway and pinned the MVP to
-  `zai/glm-5.3-flash`.
+  `minimax/minimax-m3`.
 - Added explicit Vercel AI Gateway errors and retryability metadata.
 - Added the local `sampel.env` secret file to Git ignore rules.
 
@@ -97,6 +97,15 @@ Completed:
   error events.
 - Added one-active-request behavior, explicit cancellation, disconnect aborts,
   payload/history limits, and native ping/pong heartbeats.
+- Moved conversation authority from client-supplied history to bounded anonymous
+  per-session Express memory with reconnect snapshots and logout/expiry cleanup.
+- Added deterministic greeting, gratitude, capability, goodbye, obvious off-topic,
+  and prompt-injection handling without retrieval, document fetches, model calls,
+  or product-turn quota use.
+- Added context-aware follow-ups using validated recent FGMNs, ordinal/pronoun
+  references, terse TDS/SDS/location questions, and contextual alternative searches.
+- Added a three-substantive-product-question session quota with rollback on failure
+  or cancellation and an official Eastman product-inquiry handoff on the fourth.
 - Added retrieval-first grounded Vercel AI Gateway orchestration.
 - Upgraded orchestration to a query-aware multistep RAG flow: catalog discovery,
   a maximum-three-product shortlist, live TDS enrichment, optional SDS enrichment
@@ -153,6 +162,8 @@ Completed:
   reconnect, access-code, and preview sign-out behavior.
 - Added a Vite development proxy for backend HTTP and WebSocket endpoints.
 - Added reducer and outbound-link logic tests.
+- Stopped sending frontend-authored history; added server transcript restoration,
+  quota status, server context clearing, and a post-handoff composer state.
 - Validated authentication, the proxied WebSocket, live generated answers, product
   cards, minimize/reopen behavior, and viewport overflow at desktop and mobile sizes.
 

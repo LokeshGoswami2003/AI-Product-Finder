@@ -65,7 +65,7 @@ NODE_ENV=production
 PORT=3000
 APP_ORIGIN=https://samvad.space
 AI_PROVIDER=vercel
-VERCEL_AI_GATEWAY_MODEL=zai/glm-5.3-flash
+VERCEL_AI_GATEWAY_MODEL=minimax/minimax-m3
 CORPUS_ARTIFACT_DIR=/opt/ai-product-finder/current/artifacts
 ```
 
