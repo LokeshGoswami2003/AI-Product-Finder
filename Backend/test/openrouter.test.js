@@ -129,10 +129,7 @@ test("OpenRouter client streams text deltas and usage", async () => {
 });
 
 test("OpenRouter client retries malformed and empty streams", async () => {
-  const streams = [
-    ['data: {not-json}\n\n'],
-    ["data: [DONE]\n\n"],
-  ];
+  const streams = [["data: {not-json}\n\n"], ["data: [DONE]\n\n"]];
 
   for (const chunks of streams) {
     const client = new OpenRouterClient({
@@ -146,8 +143,7 @@ test("OpenRouter client retries malformed and empty streams", async () => {
 
     await assert.rejects(
       client.createChatCompletionStream({ messages: [] }),
-      (error) =>
-        error instanceof OpenRouterError && error.retryable === true,
+      (error) => error instanceof OpenRouterError && error.retryable === true,
     );
   }
 });
