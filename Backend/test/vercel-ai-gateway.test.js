@@ -15,7 +15,7 @@ function response(status, body) {
   };
 }
 
-test("Vercel AI Gateway client defaults to Grok 4.6", async () => {
+test("Vercel AI Gateway client defaults to GLM 5.3 Flash", async () => {
   let request;
   const client = new VercelAIGatewayClient({
     apiKey: "gateway-key",
@@ -32,7 +32,7 @@ test("Vercel AI Gateway client defaults to Grok 4.6", async () => {
 
   assert.equal(result.id, "completion");
   assert.equal(request.url, "https://ai-gateway.vercel.sh/v1/chat/completions");
-  assert.equal(payload.model, "spacexai/grok-4.6");
+  assert.equal(payload.model, "zai/glm-5.3-flash");
   assert.equal(request.options.headers.Authorization, "Bearer gateway-key");
 });
 

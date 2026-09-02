@@ -21,7 +21,7 @@ test("environment schema applies safe defaults", () => {
 
   assert.equal(env.PORT, 3000);
   assert.equal(env.AI_PROVIDER, "vercel");
-  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "spacexai/grok-4.6");
+  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "zai/glm-5.3-flash");
   assert.equal(env.CHAT_MAX_PRODUCT_TURNS, 3);
   assert.equal(env.EMBEDDING_ENABLED, false);
   assert.equal(env.EMBEDDING_MODEL, "google/gemini-embedding-2");
@@ -54,7 +54,7 @@ test("environment schema rejects a missing Vercel AI Gateway key", () => {
   assert.throws(() => parseEnv(withoutGatewayKey));
 });
 
-test("environment schema accepts Vercel AI Gateway with Grok 4.6", () => {
+test("environment schema accepts Vercel AI Gateway with GLM 5.3 Flash", () => {
   const env = parseEnv({
     ...validEnv,
     AI_PROVIDER: "vercel",
@@ -62,7 +62,7 @@ test("environment schema accepts Vercel AI Gateway with Grok 4.6", () => {
   });
 
   assert.equal(env.VERCEL_AI_GATEWAY_API_KEY, "a".repeat(20));
-  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "spacexai/grok-4.6");
+  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "zai/glm-5.3-flash");
 });
 
 test("client protocol parses chat requests and rejects unknown fields", () => {
