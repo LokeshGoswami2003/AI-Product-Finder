@@ -995,7 +995,7 @@ Before launch validation, document and verify Vercel AI Gateway and upstream-mod
 | `EMBEDDING_ENABLED`          | Nonsecret      | Enables hybrid query embeddings            |
 | `EMBEDDING_API_KEY`          | Secret         | Primary server-only OpenRouter credential  |
 | `EMBEDDING_BACKUP_API_KEY`   | Secret         | Optional separate OpenRouter failover key  |
-| `EMBEDDING_MODEL`            | Nonsecret      | `google/gemini-embedding-2`                 |
+| `EMBEDDING_MODEL`            | Nonsecret      | `google/gemini-embedding-2`                |
 | `EMBEDDING_BASE_URL`         | Nonsecret      | OpenRouter embeddings endpoint             |
 | `EMBEDDING_DIMENSIONS`       | Nonsecret      | Must match the active artifact (`768`)     |
 | `EASTMAN_PRODUCT_FINDER_URL` | Nonsecret      | Verified component endpoint                |

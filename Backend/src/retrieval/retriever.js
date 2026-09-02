@@ -70,10 +70,7 @@ class ProductRetriever {
     this.embeddingClient = embeddingClient;
   }
 
-  async retrieve(
-    query,
-    { queryVector, limit = 5, context = {}, signal } = {},
-  ) {
+  async retrieve(query, { queryVector, limit = 5, context = {}, signal } = {}) {
     const exact =
       this.exactResolver.resolve(query) ||
       this.exactResolver.resolveInText(query);

@@ -77,7 +77,7 @@ To activate a newly generated vector release safely:
 1. Select and benchmark an embedding model supported by the configured OpenAI-compatible
    `/embeddings` endpoint.
 2. Configure `EMBEDDING_API_KEY` with the primary OpenRouter key and optionally
-  `EMBEDDING_BACKUP_API_KEY` with a separate OpenRouter key,
+   `EMBEDDING_BACKUP_API_KEY` with a separate OpenRouter key,
    `EMBEDDING_BASE_URL=https://openrouter.ai/api/v1`,
    `EMBEDDING_MODEL=google/gemini-embedding-2`, and `EMBEDDING_DIMENSIONS=768`
    for both corpus ingestion and backend runtime. The reduced Matryoshka dimension

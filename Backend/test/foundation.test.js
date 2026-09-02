@@ -35,15 +35,22 @@ test("environment schema accepts enabled Gemini hybrid embeddings", () => {
     ...validEnv,
     EMBEDDING_ENABLED: "true",
     EMBEDDING_API_KEY: "b".repeat(20),
+    EMBEDDING_BACKUP_API_KEY: "c".repeat(20),
   });
   assert.equal(env.EMBEDDING_ENABLED, true);
+  assert.equal(env.EMBEDDING_BACKUP_API_KEY, "c".repeat(20));
   assert.equal(env.EMBEDDING_MODEL, "google/gemini-embedding-2");
   assert.equal(env.EMBEDDING_DIMENSIONS, 768);
 });
 
 test("environment schema requires a dedicated key when embeddings are enabled", () => {
   assert.throws(
-    () => parseEnv({ ...validEnv, EMBEDDING_ENABLED: "true" }),
+    () =>
+      parseEnv({
+        ...validEnv,
+        EMBEDDING_ENABLED: "true",
+        EMBEDDING_BACKUP_API_KEY: "c".repeat(20),
+      }),
     /embedding API key is required/i,
   );
 });
