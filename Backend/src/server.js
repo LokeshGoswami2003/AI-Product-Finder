@@ -11,6 +11,8 @@ const { loadActiveRelease } = require("./corpus/load-release");
 const { parseEnv } = require("./config/env");
 const { EmbeddingClient } = require("./embeddings/client");
 const { EMBEDDING_PROFILE } = require("./embeddings/retrieval-text");
+const { ResilientGenerationClient } = require("./generation/resilient-client");
+const { OpenRouterClient } = require("./openrouter/client");
 const {
   EastmanDocumentClient,
 } = require("./documents/eastman-document-client");
@@ -18,6 +20,42 @@ const { ProductRetriever } = require("./retrieval/retriever");
 const { PublicWebResearchClient } = require("./research/public-web");
 const { VercelAIGatewayClient } = require("./vercel-ai-gateway/client");
 const { attachChatWebSocket } = require("./websocket/chat-server");
+
+function createGenerationClient(config) {
+  const openRouterOptions = {
+    model: config.OPENROUTER_MODEL,
+    baseUrl: config.OPENROUTER_BASE_URL,
+    siteUrl: config.OPENROUTER_SITE_URL || config.APP_ORIGIN,
+    appName: config.OPENROUTER_APP_NAME,
+  };
+  const clients = [
+    new OpenRouterClient({
+      ...openRouterOptions,
+      apiKey: config.OPENROUTER_API_KEY,
+    }),
+  ];
+
+  if (config.OPENROUTER_BACKUP_API_KEY) {
+    clients.push(
+      new OpenRouterClient({
+        ...openRouterOptions,
+        apiKey: config.OPENROUTER_BACKUP_API_KEY,
+      }),
+    );
+  }
+  if (config.VERCEL_GENERATION_FALLBACK_ENABLED) {
+    clients.push(
+      new VercelAIGatewayClient({
+        apiKey: config.VERCEL_AI_GATEWAY_API_KEY,
+        model: config.VERCEL_AI_GATEWAY_MODEL,
+        fallbackModels: config.VERCEL_AI_GATEWAY_FALLBACK_MODELS,
+        baseUrl: config.VERCEL_AI_GATEWAY_BASE_URL,
+      }),
+    );
+  }
+
+  return new ResilientGenerationClient({ clients });
+}
 
 async function createServer({ config = parseEnv(), modelClient } = {}) {
   const conversationStore = new ConversationStore({
@@ -84,20 +122,20 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
       });
     }
     const retriever = new ProductRetriever({ ...corpus, embeddingClient });
-    const client =
-      modelClient ||
-      new VercelAIGatewayClient({
-        apiKey: config.VERCEL_AI_GATEWAY_API_KEY,
-        model: config.VERCEL_AI_GATEWAY_MODEL,
-        baseUrl: config.VERCEL_AI_GATEWAY_BASE_URL,
-      });
+    const client = modelClient || createGenerationClient(config);
     const documentClient = new EastmanDocumentClient({
       timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,
       cacheTtlMs: config.DOCUMENT_CACHE_TTL_SECONDS * 1000,
     });
     const researchClient = config.WEB_SEARCH_ENABLED
       ? new PublicWebResearchClient({
-          modelClient: client,
+          modelClient:
+            modelClient ||
+            new VercelAIGatewayClient({
+              apiKey: config.VERCEL_AI_GATEWAY_API_KEY,
+              model: config.VERCEL_RESEARCH_MODEL,
+              baseUrl: config.VERCEL_AI_GATEWAY_BASE_URL,
+            }),
           maxResults: config.WEB_SEARCH_MAX_RESULTS,
           timeoutMs: config.WEB_SEARCH_TIMEOUT_MS,
         })
@@ -131,4 +169,4 @@ async function start() {
   });
 }
 
-module.exports = { createServer, start };
+module.exports = { createGenerationClient, createServer, start };

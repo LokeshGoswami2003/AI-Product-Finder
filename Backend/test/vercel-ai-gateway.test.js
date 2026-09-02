@@ -83,6 +83,28 @@ test("Vercel AI Gateway client forwards structured tool options", async () => {
   assert.equal(payload.max_tokens, 500);
 });
 
+test("Vercel AI Gateway client forwards ordered model fallbacks", async () => {
+  let request;
+  const client = new VercelAIGatewayClient({
+    apiKey: "gateway-key",
+    model: "minimax/minimax-m3-free",
+    fallbackModels: ["minimax/minimax-m2.7-free", "poolside/laguna-s-2.1-free"],
+    fetchImpl: async (_url, options) => {
+      request = options;
+      return response(200, { id: "completion" });
+    },
+  });
+
+  await client.createChatCompletion({ messages: [] });
+  const payload = JSON.parse(request.body);
+
+  assert.equal(payload.model, "minimax/minimax-m3-free");
+  assert.deepEqual(payload.models, [
+    "minimax/minimax-m2.7-free",
+    "poolside/laguna-s-2.1-free",
+  ]);
+});
+
 test("Vercel AI Gateway client surfaces non-retryable request failures", async () => {
   const client = new VercelAIGatewayClient({
     apiKey: "gateway-key",

@@ -7,6 +7,7 @@ const { WebSocket } = require("ws");
 const { createSessionToken } = require("../src/auth/session");
 const {
   attachChatWebSocket,
+  classifyChatError,
   validateEventLimits,
 } = require("../src/websocket/chat-server");
 
@@ -158,6 +159,15 @@ test("WebSocket request limits bound current messages", () => {
     ),
     false,
   );
+});
+
+test("WebSocket classifies both provider transports as model errors", () => {
+  assert.equal(classifyChatError({ name: "OpenRouterError" }), "model_error");
+  assert.equal(
+    classifyChatError({ name: "VercelAIGatewayError" }),
+    "model_error",
+  );
+  assert.equal(classifyChatError(new Error("retrieval failed")), "chat_error");
 });
 
 test("server context survives reconnect and the fourth product request returns a handoff", async (context) => {

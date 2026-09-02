@@ -66,8 +66,8 @@ Completed:
 - Added deterministic source metadata and categorical outcomes: exact,
   recommendation, clarification, and no evidence.
 - Added active-release loading and real-corpus retrieval regression benchmarks.
-- Replaced OpenRouter with Vercel AI Gateway and pinned the MVP to
-  `zai/glm-5.3-flash`.
+- Added OpenRouter `z-ai/glm-5.2:free` as the primary answer model with a
+  separate backup credential and Vercel free-model fallback.
 - Added explicit Vercel AI Gateway errors and retryability metadata.
 - Added the local `sampel.env` secret file to Git ignore rules.
 - Connected embedded releases to the validated in-memory vector index.
@@ -85,9 +85,10 @@ Pending:
 - Calibrate retrieval limits, RRF constants, and confidence policy from evaluation results.
 - Wire retrieval and Vercel AI Gateway generation into the Phase D chat orchestration.
 
-The Vercel credential is read from `VERCEL_AI_GATEWAY_API_KEY` as one secret value.
-The model is pinned through `VERCEL_AI_GATEWAY_MODEL` so local and production behavior
-remain consistent.
+Generation credentials are read separately from `OPENROUTER_API_KEY`,
+`OPENROUTER_BACKUP_API_KEY`, and `VERCEL_AI_GATEWAY_API_KEY`. Generation and embedding
+variables remain explicit even when operators provision the same underlying OpenRouter
+credentials for both concerns.
 
 ## Phase 4 / Phase D - Backend and chat
 
@@ -114,7 +115,14 @@ Completed:
   references, terse TDS/SDS/location questions, and contextual alternative searches.
 - Added a three-substantive-product-question session quota with rollback on failure
   or cancellation and an official Eastman product-inquiry handoff on the fourth.
-- Added retrieval-first grounded Vercel AI Gateway orchestration.
+- Added retrieval-first grounded resilient generation orchestration.
+- Added ordered primary-key, backup-key, and Vercel provider failover before output.
+- Added Vercel gateway-managed free-model fallback from `minimax/minimax-m3-free`
+  to `minimax/minimax-m2.7-free`.
+- Kept official-site public research on a dedicated Vercel client so its
+  `vercel:perplexity_search` tool remains compatible.
+- Added safe streaming failover: attempts may switch before the first delta but never
+  splice a second provider response into an answer already shown to the user.
 - Upgraded orchestration to a query-aware multistep RAG flow: catalog discovery,
   a maximum-three-product shortlist, live TDS enrichment, optional SDS enrichment
   for safety intent, and final grounded generation.
@@ -135,8 +143,7 @@ Completed:
 
 Pending:
 
-- Stream model response deltas instead of returning one complete delta.
-- Add an application-level model deadline and retry policy before output begins.
+- Add an application-level model deadline.
 - Validate Vercel AI Gateway and upstream-model retention settings before production use.
 - Add structured redacted logging, metrics, and active-socket readiness details.
 - Add stronger post-generation grounding checks beyond the current evidence-only prompt.

@@ -7,10 +7,12 @@ const { parseClientEvent } = require("../src/protocol/client-events");
 const { buildProductUrls, validateEastmanUrl } = require("../src/urls/eastman");
 
 const validEnv = {
-  AI_PROVIDER: "vercel",
+  AI_PROVIDER: "openrouter",
   APP_ORIGIN: "http://localhost:5173",
   MVP_ACCESS_CODE: "test-code",
   COOKIE_SIGNING_SECRET: "01234567890123456789012345678901",
+  OPENROUTER_API_KEY: "o".repeat(20),
+  OPENROUTER_BACKUP_API_KEY: "p".repeat(20),
   VERCEL_AI_GATEWAY_API_KEY: "a".repeat(20),
   EASTMAN_PRODUCT_FINDER_URL:
     "https://www.eastman.com/en/products/product-finder",
@@ -20,8 +22,15 @@ test("environment schema applies safe defaults", () => {
   const env = parseEnv(validEnv);
 
   assert.equal(env.PORT, 3000);
-  assert.equal(env.AI_PROVIDER, "vercel");
-  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "zai/glm-5.3-flash");
+  assert.equal(env.AI_PROVIDER, "openrouter");
+  assert.equal(env.OPENROUTER_MODEL, "z-ai/glm-5.2:free");
+  assert.equal(env.OPENROUTER_BASE_URL, "https://openrouter.ai/api/v1");
+  assert.equal(env.VERCEL_GENERATION_FALLBACK_ENABLED, true);
+  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "minimax/minimax-m3-free");
+  assert.deepEqual(env.VERCEL_AI_GATEWAY_FALLBACK_MODELS, [
+    "minimax/minimax-m2.7-free",
+  ]);
+  assert.equal(env.VERCEL_RESEARCH_MODEL, "zai/glm-5.3-flash");
   assert.equal(env.CHAT_MAX_PRODUCT_TURNS, 3);
   assert.equal(env.EMBEDDING_ENABLED, false);
   assert.equal(env.EMBEDDING_MODEL, "google/gemini-embedding-2");
@@ -61,15 +70,29 @@ test("environment schema rejects a missing Vercel AI Gateway key", () => {
   assert.throws(() => parseEnv(withoutGatewayKey));
 });
 
-test("environment schema accepts Vercel AI Gateway with GLM 5.3 Flash", () => {
+test("environment schema rejects a missing primary OpenRouter key", () => {
+  const { OPENROUTER_API_KEY, ...withoutOpenRouterKey } = validEnv;
+
+  assert.throws(
+    () => parseEnv(withoutOpenRouterKey),
+    /OpenRouter API key is required/i,
+  );
+});
+
+test("environment schema accepts configurable Vercel model fallbacks", () => {
   const env = parseEnv({
     ...validEnv,
-    AI_PROVIDER: "vercel",
-    VERCEL_AI_GATEWAY_API_KEY: "a".repeat(20),
+    VERCEL_AI_GATEWAY_MODEL: "minimax/minimax-m3-free",
+    VERCEL_AI_GATEWAY_FALLBACK_MODELS:
+      "minimax/minimax-m2.7-free, poolside/laguna-s-2.1-free",
   });
 
   assert.equal(env.VERCEL_AI_GATEWAY_API_KEY, "a".repeat(20));
-  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "zai/glm-5.3-flash");
+  assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "minimax/minimax-m3-free");
+  assert.deepEqual(env.VERCEL_AI_GATEWAY_FALLBACK_MODELS, [
+    "minimax/minimax-m2.7-free",
+    "poolside/laguna-s-2.1-free",
+  ]);
 });
 
 test("client protocol parses chat requests and rejects unknown fields", () => {

@@ -859,7 +859,7 @@ sequenceDiagram
 		participant UI as React client
 		participant WS as Express WebSocket
 		participant RET as In-memory retriever
-		participant GW as Vercel AI Gateway
+		participant GEN as Resilient generation router
 
 		UI->>WS: chat.request (current message only)
 		WS->>WS: Validate auth, schema, limits, request ID
@@ -867,9 +867,9 @@ sequenceDiagram
 		WS->>RET: Exact + contextual + lexical/fuzzy + requirement reranking
 		RET-->>WS: Ranked products and resolved context
 		WS-->>UI: chat.progress(retrieval_complete)
-		WS->>GW: Grounded chat-completion request
-		GW-->>WS: Complete answer + usage metadata
-		WS-->>UI: answer.delta (currently one complete text event)
+		WS->>GEN: Grounded chat-completion request
+		GEN-->>WS: Streamed answer + usage metadata
+		WS-->>UI: Incremental answer.delta events
 		WS->>WS: Build deterministic product/source payloads
 		WS-->>UI: answer.sources/products
 		WS-->>UI: answer.done
@@ -940,18 +940,29 @@ This is a recommended future improvement; `answer.comparison` is not implemented
 - Do not compare values produced under different methods without a visible warning.
 - Let the model summarize tradeoffs only after the table data is fixed by the server.
 
-## 14. Vercel AI Gateway integration
+## 14. Resilient model integration
 
-### 14.1 Implemented client
+### 14.1 Implemented clients
 
-`Backend/src/vercel-ai-gateway/client.js` uses `fetch` to call the OpenAI-compatible `/chat/completions` endpoint with:
+Answer generation uses the same internal completion interface across three ordered
+attempts:
 
-- Bearer authentication from `VERCEL_AI_GATEWAY_API_KEY`.
-- The model configured by `VERCEL_AI_GATEWAY_MODEL`, defaulting to `zai/glm-5.3-flash`.
+- OpenRouter `z-ai/glm-5.2:free` with `OPENROUTER_API_KEY`.
+- The same OpenRouter model with `OPENROUTER_BACKUP_API_KEY`, when configured.
+- Vercel AI Gateway `minimax/minimax-m3-free`, with gateway-managed fallback to
+  `minimax/minimax-m2.7-free`.
+
+`Backend/src/openrouter/client.js` and `Backend/src/vercel-ai-gateway/client.js`
+use `fetch` against their OpenAI-compatible `/chat/completions` endpoints. Both receive:
+
 - A system message, bounded server-owned product history, and the current user request plus retrieval-plan/evidence JSON.
 - The request-scoped `AbortSignal` so cancellation or socket closure stops the gateway request.
 
-The client supports both complete and streamed chat completions. Production orchestration emits model text incrementally through `answer.delta` events and captures final usage metadata when supplied.
+Both transports support complete and streamed chat completions. Production orchestration
+emits model text incrementally through `answer.delta` events and captures final usage
+metadata when supplied. Official-site supplemental research stays on a separate Vercel
+client pinned by `VERCEL_RESEARCH_MODEL`, because `vercel:perplexity_search` is a
+Vercel-specific tool and is never sent through OpenRouter.
 
 ### 14.2 Grounded request policy
 
@@ -963,11 +974,16 @@ The client supports both complete and streamed chat completions. Production orch
 - Product cards and official links are produced from server records, not model output.
 - Deterministic social messages need no model call. No-evidence requests use a bounded model classification only when knowledge fallback is enabled; unrelated requests remain rejected.
 
-### 14.3 Error, cancellation, and retry behavior
+### 14.3 Error, cancellation, and failover behavior
 
-- Non-2xx responses raise `VercelAIGatewayError` with sanitized status/code metadata.
-- HTTP `429` and `5xx` responses are marked retryable; other statuses are non-retryable.
-- The orchestrator does not yet implement an application-level deadline or pre-output retry loop.
+- Non-2xx responses raise provider-specific errors with sanitized status/code metadata.
+- OpenRouter credential, quota, model availability, timeout, rate-limit, network, malformed
+  response, and provider failures are eligible for the next configured attempt.
+- HTTP `400`/`422`-style malformed requests are not switched to another provider.
+- Streaming may switch attempts only before the first text delta. Once any answer text has
+  reached the browser, an interruption is surfaced rather than mixing two model outputs.
+- Vercel tries its ordered free-model list inside one gateway request and reports the model
+  that ultimately served the response in provider metadata.
 - Cancellation, socket closure, and session expiry abort active work; failed/cancelled requests roll back the reserved product turn.
 - A disconnected client is never automatically replayed after reconnect.
 
@@ -979,39 +995,46 @@ Before launch validation, document and verify Vercel AI Gateway and upstream-mod
 
 ### Recommended backend environment schema
 
-| Variable                     | Classification | Purpose                                    |
-| ---------------------------- | -------------- | ------------------------------------------ |
-| `NODE_ENV`                   | Nonsecret      | `development`, `test`, or `production`     |
-| `PORT`                       | Nonsecret      | Loopback Express port, default `3000`      |
-| `APP_ORIGIN`                 | Nonsecret      | Exact allowed HTTPS browser origin         |
-| `MVP_ACCESS_CODE`            | Secret         | Shared test access code                    |
-| `COOKIE_SIGNING_SECRET`      | Secret         | High-entropy HMAC/signing secret           |
-| `AUTH_COOKIE_NAME`           | Nonsecret      | Cookie name                                |
-| `AUTH_TTL_SECONDS`           | Nonsecret      | Short auth-cookie lifetime                 |
-| `AI_PROVIDER`                | Nonsecret      | Fixed to `vercel` for the current MVP      |
-| `VERCEL_AI_GATEWAY_API_KEY`  | Secret         | Server-only Vercel AI Gateway credential   |
-| `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `zai/glm-5.3-flash`                |
-| `VERCEL_AI_GATEWAY_BASE_URL` | Nonsecret      | Gateway API base URL                       |
-| `EMBEDDING_ENABLED`          | Nonsecret      | Enables hybrid query embeddings            |
-| `EMBEDDING_API_KEY`          | Secret         | Primary server-only OpenRouter credential  |
-| `EMBEDDING_BACKUP_API_KEY`   | Secret         | Optional separate OpenRouter failover key  |
-| `EMBEDDING_MODEL`            | Nonsecret      | `google/gemini-embedding-2`                |
-| `EMBEDDING_BASE_URL`         | Nonsecret      | OpenRouter embeddings endpoint             |
-| `EMBEDDING_DIMENSIONS`       | Nonsecret      | Must match the active artifact (`768`)     |
-| `EASTMAN_PRODUCT_FINDER_URL` | Nonsecret      | Verified component endpoint                |
-| `CORPUS_ARTIFACT_DIR`        | Nonsecret      | Path containing the active release pointer |
-| `CORPUS_WARN_AGE_HOURS`      | Nonsecret      | Freshness warning threshold                |
-| `INGEST_CONCURRENCY`         | Nonsecret      | Bounded per-host fetch concurrency         |
-| `INGEST_TIMEOUT_MS`          | Nonsecret      | Per-source fetch timeout                   |
-| `CHAT_MAX_MESSAGE_CHARS`     | Nonsecret      | Input size limit                           |
-| `CHAT_MAX_PRODUCT_TURNS`     | Nonsecret      | Product questions before contact handoff   |
-| `CHAT_MAX_HISTORY_TURNS`     | Nonsecret      | Bounded server-owned history entries       |
-| `CHAT_MAX_HISTORY_CHARS`     | Nonsecret      | Total server-owned history size limit      |
-| `DOCUMENT_FETCH_TIMEOUT_MS`  | Nonsecret      | Per-document live fetch deadline           |
-| `DOCUMENT_CACHE_TTL_SECONDS` | Nonsecret      | Public TDS/SDS in-process cache TTL        |
-| `WS_MAX_PAYLOAD_BYTES`       | Nonsecret      | WebSocket frame/message cap                |
-| `WS_HEARTBEAT_MS`            | Nonsecret      | Ping interval below proxy idle timeout     |
-| `LOG_LEVEL`                  | Nonsecret      | Structured log level                       |
+| Variable                             | Classification | Purpose                                    |
+| ------------------------------------ | -------------- | ------------------------------------------ |
+| `NODE_ENV`                           | Nonsecret      | `development`, `test`, or `production`     |
+| `PORT`                               | Nonsecret      | Loopback Express port, default `3000`      |
+| `APP_ORIGIN`                         | Nonsecret      | Exact allowed HTTPS browser origin         |
+| `MVP_ACCESS_CODE`                    | Secret         | Shared test access code                    |
+| `COOKIE_SIGNING_SECRET`              | Secret         | High-entropy HMAC/signing secret           |
+| `AUTH_COOKIE_NAME`                   | Nonsecret      | Cookie name                                |
+| `AUTH_TTL_SECONDS`                   | Nonsecret      | Short auth-cookie lifetime                 |
+| `AI_PROVIDER`                        | Nonsecret      | Fixed to `openrouter` for the current MVP  |
+| `OPENROUTER_API_KEY`                 | Secret         | Primary answer-generation credential       |
+| `OPENROUTER_BACKUP_API_KEY`          | Secret         | Optional separate generation failover key  |
+| `OPENROUTER_MODEL`                   | Nonsecret      | Default `z-ai/glm-5.2:free`                |
+| `OPENROUTER_BASE_URL`                | Nonsecret      | OpenRouter chat API base URL               |
+| `VERCEL_GENERATION_FALLBACK_ENABLED` | Nonsecret      | Enables final Vercel answer fallback       |
+| `VERCEL_AI_GATEWAY_API_KEY`          | Secret         | Vercel fallback and research credential    |
+| `VERCEL_AI_GATEWAY_MODEL`            | Nonsecret      | Default `minimax/minimax-m3-free`          |
+| `VERCEL_AI_GATEWAY_FALLBACK_MODELS`  | Nonsecret      | Ordered comma-separated free backups       |
+| `VERCEL_AI_GATEWAY_BASE_URL`         | Nonsecret      | Gateway API base URL                       |
+| `VERCEL_RESEARCH_MODEL`              | Nonsecret      | Model for Vercel-only public web research  |
+| `EMBEDDING_ENABLED`                  | Nonsecret      | Enables hybrid query embeddings            |
+| `EMBEDDING_API_KEY`                  | Secret         | Primary server-only OpenRouter credential  |
+| `EMBEDDING_BACKUP_API_KEY`           | Secret         | Optional separate OpenRouter failover key  |
+| `EMBEDDING_MODEL`                    | Nonsecret      | `google/gemini-embedding-2`                |
+| `EMBEDDING_BASE_URL`                 | Nonsecret      | OpenRouter embeddings endpoint             |
+| `EMBEDDING_DIMENSIONS`               | Nonsecret      | Must match the active artifact (`768`)     |
+| `EASTMAN_PRODUCT_FINDER_URL`         | Nonsecret      | Verified component endpoint                |
+| `CORPUS_ARTIFACT_DIR`                | Nonsecret      | Path containing the active release pointer |
+| `CORPUS_WARN_AGE_HOURS`              | Nonsecret      | Freshness warning threshold                |
+| `INGEST_CONCURRENCY`                 | Nonsecret      | Bounded per-host fetch concurrency         |
+| `INGEST_TIMEOUT_MS`                  | Nonsecret      | Per-source fetch timeout                   |
+| `CHAT_MAX_MESSAGE_CHARS`             | Nonsecret      | Input size limit                           |
+| `CHAT_MAX_PRODUCT_TURNS`             | Nonsecret      | Product questions before contact handoff   |
+| `CHAT_MAX_HISTORY_TURNS`             | Nonsecret      | Bounded server-owned history entries       |
+| `CHAT_MAX_HISTORY_CHARS`             | Nonsecret      | Total server-owned history size limit      |
+| `DOCUMENT_FETCH_TIMEOUT_MS`          | Nonsecret      | Per-document live fetch deadline           |
+| `DOCUMENT_CACHE_TTL_SECONDS`         | Nonsecret      | Public TDS/SDS in-process cache TTL        |
+| `WS_MAX_PAYLOAD_BYTES`               | Nonsecret      | WebSocket frame/message cap                |
+| `WS_HEARTBEAT_MS`                    | Nonsecret      | Ping interval below proxy idle timeout     |
+| `LOG_LEVEL`                          | Nonsecret      | Structured log level                       |
 
 Production secrets belong in SSM Parameter Store, Secrets Manager, or a root-readable systemd environment file. Commit only `.env.example` placeholders.
 
@@ -1065,7 +1088,7 @@ Clears the server-owned transcript and recent product-reference context while pr
 | `conversation.snapshot` | Restores bounded messages and quota after connection/reconnection                 |
 | `chat.accepted`         | Request ID accepted after validation                                              |
 | `chat.progress`         | Safe stage update such as understanding, retrieving, grounding, or generating     |
-| `answer.delta`          | Display text; currently the complete answer in one event                          |
+| `answer.delta`          | Incremental streamed display text                                                 |
 | `answer.sources`        | Validated citation metadata                                                       |
 | `answer.products`       | Deterministic product cards                                                       |
 | `answer.comparison`     | Optional deterministic comparison model                                           |

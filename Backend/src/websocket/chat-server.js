@@ -43,6 +43,13 @@ function validateEventLimits(event, config) {
   return event.message.length <= config.CHAT_MAX_MESSAGE_CHARS;
 }
 
+function classifyChatError(error) {
+  return error?.name === "OpenRouterError" ||
+    error?.name === "VercelAIGatewayError"
+    ? "model_error"
+    : "chat_error";
+}
+
 function serializeResults(retrieval = { results: [] }) {
   const results = retrieval.results || [];
   const sources = [
@@ -343,10 +350,7 @@ function attachChatWebSocket({
           send(socket, {
             type: "error",
             requestId: event.requestId,
-            code:
-              error.name === "VercelAIGatewayError"
-                ? "model_error"
-                : "chat_error",
+            code: classifyChatError(error),
             message: "The answer could not be completed. Please retry.",
             fatal: false,
           });
@@ -405,6 +409,7 @@ module.exports = {
   HANDOFF_SOURCE,
   HANDOFF_TEXT,
   attachChatWebSocket,
+  classifyChatError,
   serializeResults,
   validateEventLimits,
 };

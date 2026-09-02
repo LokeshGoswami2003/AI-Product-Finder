@@ -12,15 +12,26 @@ class VercelAIGatewayClient {
   constructor({
     apiKey,
     model = "zai/glm-5.3-flash",
+    fallbackModels = [],
     baseUrl = "https://ai-gateway.vercel.sh/v1",
     fetchImpl = fetch,
   }) {
     if (typeof apiKey !== "string" || apiKey.trim() === "") {
       throw new TypeError("A Vercel AI Gateway API key is required");
     }
+    if (
+      !Array.isArray(fallbackModels) ||
+      fallbackModels.some(
+        (fallbackModel) =>
+          typeof fallbackModel !== "string" || fallbackModel.trim() === "",
+      )
+    ) {
+      throw new TypeError("Vercel AI Gateway fallback models must be strings");
+    }
 
     this.apiKey = apiKey;
     this.model = model;
+    this.fallbackModels = [...fallbackModels];
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.fetchImpl = fetchImpl;
   }
@@ -41,6 +52,9 @@ class VercelAIGatewayClient {
       },
       body: JSON.stringify({
         model: this.model,
+        ...(this.fallbackModels.length > 0
+          ? { models: this.fallbackModels }
+          : {}),
         messages,
         ...(responseFormat ? { response_format: responseFormat } : {}),
         ...(tools ? { tools } : {}),
@@ -83,6 +97,9 @@ class VercelAIGatewayClient {
       },
       body: JSON.stringify({
         model: this.model,
+        ...(this.fallbackModels.length > 0
+          ? { models: this.fallbackModels }
+          : {}),
         messages,
         stream: true,
         stream_options: { include_usage: true },

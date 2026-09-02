@@ -65,10 +65,27 @@ from `Backend/.env.example`:
 NODE_ENV=production
 PORT=3000
 APP_ORIGIN=https://samvad.space
-AI_PROVIDER=vercel
-VERCEL_AI_GATEWAY_MODEL=zai/glm-5.3-flash
+AI_PROVIDER=openrouter
+OPENROUTER_API_KEY=<primary-openrouter-generation-key>
+OPENROUTER_BACKUP_API_KEY=<backup-openrouter-generation-key>
+OPENROUTER_MODEL=z-ai/glm-5.2:free
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_SITE_URL=https://samvad.space
+OPENROUTER_APP_NAME=AI Product Finder
+VERCEL_GENERATION_FALLBACK_ENABLED=true
+VERCEL_AI_GATEWAY_MODEL=minimax/minimax-m3-free
+VERCEL_AI_GATEWAY_FALLBACK_MODELS=minimax/minimax-m2.7-free
+VERCEL_RESEARCH_MODEL=zai/glm-5.3-flash
 CORPUS_ARTIFACT_DIR=/opt/ai-product-finder/current/artifacts
 ```
+
+Keep generation and embedding environment names explicit even when an operator chooses
+to place the same two OpenRouter credential values in both sets. Answer generation tries
+the primary OpenRouter key, the backup OpenRouter key, then Vercel. Vercel tries the two
+configured free models in order. The Vercel research model remains separate because the
+official-site research path depends on the gateway-only `vercel:perplexity_search` tool.
+Provider switching is allowed only before the first streamed answer delta; cancellation
+and malformed client requests never trigger a second provider attempt.
 
 Hybrid retrieval uses a versioned, pre-generated corpus so deployments do not
 recompute embeddings or silently replace vectors with a lexical-only release.

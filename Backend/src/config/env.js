@@ -3,6 +3,20 @@ const { z } = require("zod");
 const positiveInteger = (defaultValue) =>
   z.coerce.number().int().positive().default(defaultValue);
 
+const commaSeparatedStrings = (defaultValue) =>
+  z
+    .preprocess(
+      (value) =>
+        typeof value === "string"
+          ? value
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : value,
+      z.array(z.string().trim().min(1)).max(10),
+    )
+    .default(defaultValue);
+
 const booleanFromEnvironment = z.preprocess((value) => {
   if (typeof value !== "string") return value;
   if (/^(?:1|true)$/i.test(value)) return true;
@@ -24,13 +38,30 @@ const envSchema = z
       .regex(/^[A-Za-z0-9_-]+$/)
       .default("product_finder_session"),
     AUTH_TTL_SECONDS: positiveInteger(3600),
-    AI_PROVIDER: z.literal("vercel").default("vercel"),
+    AI_PROVIDER: z.literal("openrouter").default("openrouter"),
+    OPENROUTER_API_KEY: z.string().min(20).optional(),
+    OPENROUTER_BACKUP_API_KEY: z.string().min(20).optional(),
+    OPENROUTER_MODEL: z.string().min(1).default("z-ai/glm-5.2:free"),
+    OPENROUTER_BASE_URL: z
+      .string()
+      .url()
+      .default("https://openrouter.ai/api/v1"),
+    OPENROUTER_SITE_URL: z.string().url().optional(),
+    OPENROUTER_APP_NAME: z.string().min(1).default("AI Product Finder"),
+    VERCEL_GENERATION_FALLBACK_ENABLED: booleanFromEnvironment.default(true),
     VERCEL_AI_GATEWAY_API_KEY: z.string().min(20).optional(),
-    VERCEL_AI_GATEWAY_MODEL: z.string().min(1).default("zai/glm-5.3-flash"),
+    VERCEL_AI_GATEWAY_MODEL: z
+      .string()
+      .min(1)
+      .default("minimax/minimax-m3-free"),
+    VERCEL_AI_GATEWAY_FALLBACK_MODELS: commaSeparatedStrings([
+      "minimax/minimax-m2.7-free",
+    ]),
     VERCEL_AI_GATEWAY_BASE_URL: z
       .string()
       .url()
       .default("https://ai-gateway.vercel.sh/v1"),
+    VERCEL_RESEARCH_MODEL: z.string().min(1).default("zai/glm-5.3-flash"),
     KNOWLEDGE_FALLBACK_ENABLED: booleanFromEnvironment.default(true),
     WEB_SEARCH_ENABLED: booleanFromEnvironment.default(true),
     WEB_SEARCH_MAX_RESULTS: z.coerce.number().int().min(1).max(10).default(5),
@@ -64,11 +95,22 @@ const envSchema = z
       .default("info"),
   })
   .superRefine((env, context) => {
-    if (env.AI_PROVIDER === "vercel" && !env.VERCEL_AI_GATEWAY_API_KEY) {
+    if (env.AI_PROVIDER === "openrouter" && !env.OPENROUTER_API_KEY) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["OPENROUTER_API_KEY"],
+        message: "An OpenRouter API key is required",
+      });
+    }
+    if (
+      (env.VERCEL_GENERATION_FALLBACK_ENABLED || env.WEB_SEARCH_ENABLED) &&
+      !env.VERCEL_AI_GATEWAY_API_KEY
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["VERCEL_AI_GATEWAY_API_KEY"],
-        message: "A Vercel AI Gateway API key is required",
+        message:
+          "A Vercel AI Gateway API key is required for generation fallback or web research",
       });
     }
     if (env.EMBEDDING_ENABLED && !env.EMBEDDING_API_KEY) {
