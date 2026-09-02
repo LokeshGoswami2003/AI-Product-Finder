@@ -85,8 +85,8 @@ To activate a newly generated vector release safely:
    manifest records the model, observed dimensions, format version, and chunk hashes.
 4. Run backend tests and the retrieval benchmark against the new release before deployment.
 5. Update `artifacts/.gitignore` to track only the new active release, commit that
-  release together with `artifacts/current.json`, and remove the previous release
-  exception when it is no longer needed for deployment.
+   release together with `artifacts/current.json`, and remove the previous release
+   exception when it is no longer needed for deployment.
 6. Add the embedding settings to the production SSM environment and enable the flag.
 
 If the active release has no embeddings, the backend remains lexical. If a query-time
