@@ -1,0 +1,25 @@
+{
+  "releaseId": "20260902T172534143Z-7daaf5c5",
+  "createdAt": "2026-09-02T17:25:34.143Z",
+  "schemaVersion": 1,
+  "parserVersion": 1,
+  "source": {
+    "path": "productfinder.json",
+    "sha256": "7daaf5c530ff17c3a911e7b1050184f1400a47aad127fd77b78cfd1579622fa4"
+  },
+  "files": {
+    "products": "products.json",
+    "facets": "facets.json",
+    "memberships": "memberships.json",
+    "chunks": "chunks.jsonl",
+    "embeddings": "embeddings.jsonl",
+    "report": "report.json"
+  },
+  "embeddings": {
+    "model": "google/gemini-embedding-2",
+    "dimensions": 768,
+    "generatedAt": "2026-09-02T17:25:34.143Z",
+    "formatVersion": 1,
+    "profile": "gemini-asymmetric-search-v1"
+  }
+}

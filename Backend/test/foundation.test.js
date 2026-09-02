@@ -23,6 +23,29 @@ test("environment schema applies safe defaults", () => {
   assert.equal(env.AI_PROVIDER, "vercel");
   assert.equal(env.VERCEL_AI_GATEWAY_MODEL, "zai/glm-5.3-flash");
   assert.equal(env.CHAT_MAX_PRODUCT_TURNS, 3);
+  assert.equal(env.EMBEDDING_ENABLED, false);
+  assert.equal(env.EMBEDDING_MODEL, "google/gemini-embedding-2");
+  assert.equal(env.EMBEDDING_BASE_URL, "https://openrouter.ai/api/v1");
+  assert.equal(env.EMBEDDING_DIMENSIONS, 768);
+  assert.equal(env.EMBEDDING_BATCH_SIZE, 64);
+});
+
+test("environment schema accepts enabled Gemini hybrid embeddings", () => {
+  const env = parseEnv({
+    ...validEnv,
+    EMBEDDING_ENABLED: "true",
+    EMBEDDING_API_KEY: "b".repeat(20),
+  });
+  assert.equal(env.EMBEDDING_ENABLED, true);
+  assert.equal(env.EMBEDDING_MODEL, "google/gemini-embedding-2");
+  assert.equal(env.EMBEDDING_DIMENSIONS, 768);
+});
+
+test("environment schema requires a dedicated key when embeddings are enabled", () => {
+  assert.throws(
+    () => parseEnv({ ...validEnv, EMBEDDING_ENABLED: "true" }),
+    /embedding API key is required/i,
+  );
 });
 
 test("environment schema rejects a missing Vercel AI Gateway key", () => {

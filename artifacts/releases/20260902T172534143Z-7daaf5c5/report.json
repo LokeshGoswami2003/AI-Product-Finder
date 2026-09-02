@@ -1,0 +1,12 @@
+{
+  "status": "partial",
+  "productCount": 979,
+  "facetCategoryCount": 5,
+  "chunkCount": 979,
+  "embeddingStatus": "complete",
+  "embeddingCount": 979,
+  "warnings": [
+    "Facet memberships require live single-facet queries and are not populated by local ingestion.",
+    "Canonical product links are generated fallbacks until captured and validated from Eastman."
+  ]
+}

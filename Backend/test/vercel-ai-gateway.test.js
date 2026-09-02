@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const { Readable } = require("node:stream");
 const test = require("node:test");
 
 const {
@@ -64,4 +65,37 @@ test("Vercel AI Gateway client surfaces non-retryable request failures", async (
       error.status === 400 &&
       error.retryable === false,
   );
+});
+
+test("Vercel AI Gateway client streams text deltas and usage", async () => {
+  let request;
+  const chunks = [
+    'data: {"choices":[{"delta":{"content":"A useful "}}]}\n\n',
+    'data: {"choices":[{"delta":{"content":"answer."}}]}\n\n',
+    'data: {"choices":[],"usage":{"total_tokens":12}}\n\ndata: [DONE]\n\n',
+  ];
+  const client = new VercelAIGatewayClient({
+    apiKey: "gateway-key",
+    fetchImpl: async (url, options) => {
+      request = { url, options };
+      return {
+        ok: true,
+        status: 200,
+        body: Readable.from(chunks.map((chunk) => Buffer.from(chunk))),
+      };
+    },
+  });
+  const deltas = [];
+
+  const result = await client.createChatCompletionStream({
+    messages: [{ role: "user", content: "Find a product" }],
+    onDelta: (delta) => deltas.push(delta),
+  });
+  const payload = JSON.parse(request.options.body);
+
+  assert.equal(payload.stream, true);
+  assert.deepEqual(payload.stream_options, { include_usage: true });
+  assert.deepEqual(deltas, ["A useful ", "answer."]);
+  assert.equal(result.choices[0].message.content, "A useful answer.");
+  assert.deepEqual(result.usage, { total_tokens: 12 });
 });

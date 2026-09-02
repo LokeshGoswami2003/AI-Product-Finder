@@ -8,8 +8,8 @@
     "start": "node --env-file-if-exists=.env index.js",
     "dev": "nodemon --exec \"node --env-file-if-exists=.env\" index.js",
     "test": "node --test",
-    "ingest": "node scripts/ingest-local.js",
-    "benchmark:retrieval": "node scripts/benchmark-retrieval.js"
+    "ingest": "node --env-file-if-exists=.env scripts/ingest-local.js",
+    "benchmark:retrieval": "node --env-file-if-exists=.env scripts/benchmark-retrieval.js"
   },
   "dependencies": {
     "cheerio": "^1.1.2",

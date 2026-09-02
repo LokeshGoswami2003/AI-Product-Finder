@@ -41,9 +41,11 @@ test("authenticated WebSocket emits the complete protocol lifecycle", async (con
     config,
     corpusVersion: "release-1",
     orchestrator: {
-      answer: async ({ onProgress }) => {
+      answer: async ({ onProgress, onDelta }) => {
         onProgress("grounding");
         onProgress("generating");
+        onDelta("Grounded ");
+        onDelta("answer");
         return {
           text: "Grounded answer",
           usage: { total_tokens: 10 },
@@ -105,12 +107,19 @@ test("authenticated WebSocket emits the complete protocol lifecycle", async (con
       "chat.progress",
       "chat.progress",
       "answer.delta",
+      "answer.delta",
       "answer.sources",
       "answer.products",
       "answer.done",
     ],
   );
   assert.equal(events[0].protocolVersion, 2);
+  assert.deepEqual(
+    events
+      .filter((event) => event.type === "answer.delta")
+      .map((event) => event.delta),
+    ["Grounded ", "answer"],
+  );
   socket.close();
 });
 

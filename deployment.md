@@ -12,8 +12,9 @@ deployment role. SSH is deliberately not exposed.
 - The backend listens only on `127.0.0.1:3000` under systemd.
 - Runtime secrets are held in an encrypted SSM `SecureString`, not in Git,
   GitHub variables, user data, or deployment bundles.
-- GitHub Actions validates and bundles each commit, uploads it to the private
-  deployment bucket, and deploys it through AWS Systems Manager.
+- GitHub Actions validates each commit and the versioned active vector corpus,
+  bundles both, uploads the release to the private deployment bucket, and
+  deploys it through AWS Systems Manager.
 - Releases are extracted under `/opt/ai-product-finder/releases/<git-sha>`.
   `/opt/ai-product-finder/current` is switched atomically after installation.
 - The previous release is restored automatically when the readiness check
@@ -68,6 +69,30 @@ AI_PROVIDER=vercel
 VERCEL_AI_GATEWAY_MODEL=zai/glm-5.3-flash
 CORPUS_ARTIFACT_DIR=/opt/ai-product-finder/current/artifacts
 ```
+
+Hybrid retrieval uses a versioned, pre-generated corpus so deployments do not
+recompute embeddings or silently replace vectors with a lexical-only release.
+To activate a newly generated vector release safely:
+
+1. Select and benchmark an embedding model supported by the configured OpenAI-compatible
+   `/embeddings` endpoint.
+2. Configure `EMBEDDING_API_KEY` with an OpenRouter key,
+   `EMBEDDING_BASE_URL=https://openrouter.ai/api/v1`,
+   `EMBEDDING_MODEL=google/gemini-embedding-2`, and `EMBEDDING_DIMENSIONS=768`
+   for both corpus ingestion and backend runtime. The reduced Matryoshka dimension
+   is supported and automatically normalized by Gemini.
+3. Run ingestion with `EMBEDDING_ENABLED=true`; activation is atomic and the resulting
+   manifest records the model, observed dimensions, format version, and chunk hashes.
+4. Run backend tests and the retrieval benchmark against the new release before deployment.
+5. Update `artifacts/.gitignore` to track only the new active release, commit that
+  release together with `artifacts/current.json`, and remove the previous release
+  exception when it is no longer needed for deployment.
+6. Add the embedding settings to the production SSM environment and enable the flag.
+
+If the active release has no embeddings, the backend remains lexical. If a query-time
+embedding request fails, retrieval falls back to lexical results. A configured model or
+dimension mismatch with an embedded release is rejected during server creation rather
+than mixing incompatible vector spaces.
 
 Create the parameter with the AWS-managed SSM encryption key. If a
 customer-managed KMS key is selected instead, grant the instance role

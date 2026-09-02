@@ -41,11 +41,10 @@ jobs:
           npm --prefix Backend test
           npm --prefix Frontend test
 
-      - name: Build corpus release
-        run: npm --prefix Backend run ingest
-
-      - name: Run retrieval benchmark
-        run: npm --prefix Backend run benchmark:retrieval
+      - name: Validate versioned vector corpus
+        run: |
+          node -e "const { loadActiveRelease } = require('./Backend/src/corpus/load-release'); loadActiveRelease('./artifacts').then(({ manifest, vectorSearch }) => { if (!vectorSearch || manifest.embeddings?.model !== 'google/gemini-embedding-2' || manifest.embeddings?.dimensions !== 768) throw new Error('The active Gemini vector corpus is missing or incompatible'); console.log('Validated vector corpus', manifest.releaseId); })"
+          npm --prefix Backend run benchmark:retrieval
 
       - name: Lint frontend
         run: npm --prefix Frontend run lint

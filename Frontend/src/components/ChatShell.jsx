@@ -16,7 +16,9 @@ export function ChatShell({ onLogout }) {
   const [state, dispatch] = useReducer(chatReducer, initialChatState);
   const [draft, setDraft] = useState("");
   const [isOpen, setIsOpen] = useState(true);
+  const conversationRef = useRef(null);
   const conversationEndRef = useRef(null);
+  const followConversationRef = useRef(true);
 
   const { status, connect, send } = useChatSocket({
     enabled: true,
@@ -70,13 +72,23 @@ export function ChatShell({ onLogout }) {
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen || !followConversationRef.current) return undefined;
+    const frame = requestAnimationFrame(() => {
       conversationEndRef.current?.scrollIntoView({
         behavior: "auto",
         block: "nearest",
       });
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [isOpen, state.messages, state.progress]);
+
+  function updateScrollPreference() {
+    const container = conversationRef.current;
+    if (!container) return;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    followConversationRef.current = distanceFromBottom < 80;
+  }
 
   function submit(message = draft) {
     const trimmed = message.trim();
@@ -97,6 +109,7 @@ export function ChatShell({ onLogout }) {
     });
     if (!sent) return;
 
+    followConversationRef.current = true;
     dispatch({ type: "request.started", requestId, message: trimmed });
     setDraft("");
   }
@@ -169,7 +182,11 @@ export function ChatShell({ onLogout }) {
             </div>
           </header>
 
-          <div className="widget-body">
+          <div
+            className="widget-body"
+            ref={conversationRef}
+            onScroll={updateScrollPreference}
+          >
             {state.messages.length === 0 && (
               <section className="chat-welcome" aria-labelledby="welcome-title">
                 <p className="widget-kicker">EASTMAN PRODUCT SUPPORT</p>
@@ -201,7 +218,7 @@ export function ChatShell({ onLogout }) {
               <div className="message-list">
                 {state.messages.map((message) => (
                   <article
-                    className={`message message--${message.role}`}
+                    className={`message message--${message.role}${message.id === `answer:${state.activeRequestId}` ? " message--streaming" : ""}`}
                     key={message.id}
                   >
                     <span className="sr-only">

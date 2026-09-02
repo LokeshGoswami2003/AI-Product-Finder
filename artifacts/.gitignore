@@ -1,3 +1,4 @@
-releases/
+releases/*
+!releases/20260902T172534143Z-7daaf5c5/
+!releases/20260902T172534143Z-7daaf5c5/**
 current
-current.json

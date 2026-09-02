@@ -1,0 +1,2048 @@
+[
+  {
+    "categoryName": "industry",
+    "categoryTitle": "Markets",
+    "values": [
+      {
+        "key": "industry:89",
+        "id": "89",
+        "name": "Agriculture intermediates",
+        "lookupName": "Agriculture",
+        "count": 15,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:19",
+        "id": "19",
+        "name": "Agrochemical Intermediates",
+        "lookupName": "Agrochemical Intermediates",
+        "count": 31,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:79",
+        "id": "79",
+        "name": "Animal nutrition",
+        "lookupName": "Animal Nutrition",
+        "count": 55,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:2",
+        "id": "2",
+        "name": "Building and construction",
+        "lookupName": "Building Construction",
+        "count": 125,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:15",
+        "id": "15",
+        "name": "Childcare items",
+        "lookupName": "Childcare Items",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:30",
+        "id": "30",
+        "name": "Cleaners",
+        "lookupName": "Janitorial Household Cleaners",
+        "count": 20,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:55",
+        "id": "55",
+        "name": "Coatings",
+        "lookupName": "Coatings",
+        "count": 117,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:23",
+        "id": "23",
+        "name": "Consumer housewares",
+        "lookupName": "Consumer Housewares",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:17",
+        "id": "17",
+        "name": "Crop protection",
+        "lookupName": "Crop Protection",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:10",
+        "id": "10",
+        "name": "Electronics",
+        "lookupName": "Electronics",
+        "count": 48,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:5",
+        "id": "5",
+        "name": "Energy, fuels and water",
+        "lookupName": "Energy, Fuels Water",
+        "count": 48,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:65",
+        "id": "65",
+        "name": "Eyewear",
+        "lookupName": "Ophthalmic",
+        "count": 20,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:73",
+        "id": "73",
+        "name": "Filtration",
+        "lookupName": "Filtration",
+        "count": 8,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:24",
+        "id": "24",
+        "name": "Food and beverage ingredients",
+        "lookupName": "Food Beverage Ingredients",
+        "count": 16,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:25",
+        "id": "25",
+        "name": "Food and beverage packaging",
+        "lookupName": "Food Beverage Packaging",
+        "count": 49,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:26",
+        "id": "26",
+        "name": "Furniture",
+        "lookupName": "Furniture",
+        "count": 52,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:27",
+        "id": "27",
+        "name": "Graphic arts and supplies",
+        "lookupName": "Graphic Arts",
+        "count": 88,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:29",
+        "id": "29",
+        "name": "Household packaging",
+        "lookupName": "Home, Garden Auto Packaging",
+        "count": 63,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:54",
+        "id": "54",
+        "name": "Hygiene",
+        "lookupName": "Hygiene",
+        "count": 12,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:81",
+        "id": "81",
+        "name": "Medical",
+        "lookupName": "Medical",
+        "count": 53,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:90",
+        "id": "90",
+        "name": "Personal care and cosmetics ingredients",
+        "lookupName": "PCC Ingredients",
+        "count": 35,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:35",
+        "id": "35",
+        "name": "Personal care and cosmetics packaging",
+        "lookupName": "Personal Care Cosmetics Packaging",
+        "count": 129,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:91",
+        "id": "91",
+        "name": "Pharmaceutical ingredients",
+        "lookupName": "Pharmaceutical Ingredients",
+        "count": 45,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:96",
+        "id": "96",
+        "name": "Solus",
+        "lookupName": "Solus - Brand Applications",
+        "count": 74,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:95",
+        "id": "95",
+        "name": "Solvent",
+        "lookupName": "Solvents - Type Applications",
+        "count": 20,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:94",
+        "id": "94",
+        "name": "Transportation",
+        "lookupName": "Transport",
+        "count": 128,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "industry:38",
+        "id": "38",
+        "name": "Visual merchandising",
+        "lookupName": "Visual Merchandising",
+        "count": 70,
+        "level": "Parent",
+        "parentId": null
+      }
+    ]
+  },
+  {
+    "categoryName": "product-types",
+    "categoryTitle": "Product types",
+    "values": [
+      {
+        "key": "product-types:1",
+        "id": "1",
+        "name": "Acids",
+        "lookupName": "Acids",
+        "count": 38,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:6",
+        "id": "6",
+        "name": "Aldehydes",
+        "lookupName": "Aldehydes",
+        "count": 6,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:7",
+        "id": "7",
+        "name": "Amides",
+        "lookupName": "Amides",
+        "count": 2,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:8",
+        "id": "8",
+        "name": "Amine derivatives",
+        "lookupName": "Amine Derivatives",
+        "count": 66,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:9",
+        "id": "9",
+        "name": "Amine salts",
+        "lookupName": "Amine Salts",
+        "count": 3,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:10",
+        "id": "10",
+        "name": "Amines",
+        "lookupName": "Amines",
+        "count": 34,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:13",
+        "id": "13",
+        "name": "Anhydrides",
+        "lookupName": "Anhydrides",
+        "count": 11,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:14",
+        "id": "14",
+        "name": "Animal nutrition",
+        "lookupName": "Animal Nutrition",
+        "count": 64,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:15",
+        "id": "15",
+        "name": "Antioxidants, hydroquinones and preservatives",
+        "lookupName": "Antioxidants, Hydroquinones and Preservatives",
+        "count": 14,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:16",
+        "id": "16",
+        "name": "Aviation fluids",
+        "lookupName": "Aviation Fluids",
+        "count": 14,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:17",
+        "id": "17",
+        "name": "Benzene",
+        "lookupName": "Benzene",
+        "count": 2,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:25",
+        "id": "25",
+        "name": "Coalescents",
+        "lookupName": "Coalescents",
+        "count": 4,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:130",
+        "id": "130",
+        "name": "Compostables",
+        "lookupName": "Compostables",
+        "count": 3,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:26",
+        "id": "26",
+        "name": "Copolyesters",
+        "lookupName": "Copolyesters",
+        "count": 268,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:28",
+        "id": "28",
+        "name": "Deicers",
+        "lookupName": "De-Icers",
+        "count": 6,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:34",
+        "id": "34",
+        "name": "Formic acid salts",
+        "lookupName": "Formic Acid Salts",
+        "count": 7,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:36",
+        "id": "36",
+        "name": "Gas treatment chemicals",
+        "lookupName": "Gas Treatment Chemicals",
+        "count": 9,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:37",
+        "id": "37",
+        "name": "Glycols",
+        "lookupName": "Glycols",
+        "count": 5,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:38",
+        "id": "38",
+        "name": "Heat transfer fluids",
+        "lookupName": "Heat Transfer Fluids",
+        "count": 20,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:123",
+        "id": "123",
+        "name": "Membrane polymers",
+        "lookupName": "Membrane polymer",
+        "count": 7,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:49",
+        "id": "49",
+        "name": "Plasticizers",
+        "lookupName": "Plasticizers",
+        "count": 46,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:57",
+        "id": "57",
+        "name": "Polyester resins",
+        "lookupName": "Polyester Resins",
+        "count": 10,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:58",
+        "id": "58",
+        "name": "Polymer intermediates",
+        "lookupName": "Polymer Intermediates",
+        "count": 6,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:62",
+        "id": "62",
+        "name": "Process fluids",
+        "lookupName": "Process Fluids",
+        "count": 14,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:64",
+        "id": "64",
+        "name": "Resin intermediates",
+        "lookupName": "Resin Intermediates",
+        "count": 12,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:65",
+        "id": "65",
+        "name": "Retinyl esters",
+        "lookupName": "Retinyl Esters",
+        "count": 2,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:66",
+        "id": "66",
+        "name": "Silage additives",
+        "lookupName": "Silage Additives",
+        "count": 4,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:94",
+        "id": "94",
+        "name": "Solvents",
+        "lookupName": "Solvents",
+        "count": 24,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:67",
+        "id": "67",
+        "name": "Sucrose acetate isobutyrate",
+        "lookupName": "Sucrose Acetate Isobutyrate",
+        "count": 9,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:127",
+        "id": "127",
+        "name": "Terpenes",
+        "lookupName": "Terpenes",
+        "count": 1,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:128",
+        "id": "128",
+        "name": "Turbo oil",
+        "lookupName": "Turbo oil",
+        "count": 6,
+        "level": "Parent",
+        "parentId": "null"
+      },
+      {
+        "key": "product-types:70",
+        "id": "70",
+        "name": "Water-dispersible polymers",
+        "lookupName": "Water-Dispersible Polymers",
+        "count": 10,
+        "level": "Parent",
+        "parentId": "null"
+      }
+    ]
+  },
+  {
+    "categoryName": "brands",
+    "categoryTitle": "Brands",
+    "values": [
+      {
+        "key": "brands:116",
+        "id": "116",
+        "name": "Acitra acidifier blends",
+        "lookupName": "Acitra",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:4",
+        "id": "4",
+        "name": "AdapT gas sweetening solutions",
+        "lookupName": "Adapt",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:5",
+        "id": "5",
+        "name": "Admex polymeric plasticizers",
+        "lookupName": "Admex",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:6",
+        "id": "6",
+        "name": "Advantex neutralizing amine additive",
+        "lookupName": "Advantex",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:120",
+        "id": "120",
+        "name": "Advantis adhesion promoters",
+        "lookupName": "Advantis",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:98",
+        "id": "98",
+        "name": "AIV silage additives",
+        "lookupName": "AIV Formic Acids",
+        "count": 6,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:96",
+        "id": "96",
+        "name": "AQ polymers",
+        "lookupName": "AQ",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:118",
+        "id": "118",
+        "name": "Aventa compostable materials",
+        "lookupName": "Aventa",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:9",
+        "id": "9",
+        "name": "Benzoflex plasticizers",
+        "lookupName": "Benzoflex",
+        "count": 18,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:10",
+        "id": "10",
+        "name": "BioExtend high-performance antioxidant solutions",
+        "lookupName": "Bioextend",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:122",
+        "id": "122",
+        "name": "BioSustane pharmaceutical excipient",
+        "lookupName": "Biosustane",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:12",
+        "id": "12",
+        "name": "Cadence copolyester",
+        "lookupName": "Cadence",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:117",
+        "id": "117",
+        "name": "Cedroz post-planting bionematicide",
+        "lookupName": "Cedroz",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:106",
+        "id": "106",
+        "name": "Clearway deicers",
+        "lookupName": "Clearway",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:111",
+        "id": "111",
+        "name": "Cristal copolyester ",
+        "lookupName": "Cristal",
+        "count": 70,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:144",
+        "id": "144",
+        "name": "DOA",
+        "lookupName": "Doa",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:145",
+        "id": "145",
+        "name": "DOM",
+        "lookupName": "Dom",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:146",
+        "id": "146",
+        "name": "DOP",
+        "lookupName": "Dop",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:17",
+        "id": "17",
+        "name": "Drystar copolyester",
+        "lookupName": "Drystar",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:18",
+        "id": "18",
+        "name": "DuraStar polymers",
+        "lookupName": "Durastar",
+        "count": 12,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:20",
+        "id": "20",
+        "name": "Eastalite copolyester",
+        "lookupName": "Eastalite",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:21",
+        "id": "21",
+        "name": "Eastalloy polymers",
+        "lookupName": "Eastalloy",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:22",
+        "id": "22",
+        "name": "EastaPure electronic chemicals",
+        "lookupName": "Eastapure",
+        "count": 13,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:1",
+        "id": "1",
+        "name": "Eastar copolyesters",
+        "lookupName": "Eastar",
+        "count": 48,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:24",
+        "id": "24",
+        "name": "Eastek polymer dispersion",
+        "lookupName": "Eastek",
+        "count": 6,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:137",
+        "id": "137",
+        "name": "Eastman 168 non-phthalate plasticizer",
+        "lookupName": "Eastman 168",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:110",
+        "id": "110",
+        "name": "Eastobond copolyester",
+        "lookupName": "Eastobond",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:27",
+        "id": "27",
+        "name": "Ecdel elastomers",
+        "lookupName": "Ecdel",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:123",
+        "id": "123",
+        "name": "Effusion plasticizer",
+        "lookupName": "Effusion",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:28",
+        "id": "28",
+        "name": "Embrace copolyester",
+        "lookupName": "Embrace",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:135",
+        "id": "135",
+        "name": "Freezium",
+        "lookupName": "Freezium",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:126",
+        "id": "126",
+        "name": "GEM technology",
+        "lookupName": "GEM",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:127",
+        "id": "127",
+        "name": "Keitex feed hygiene enhancers",
+        "lookupName": "Keitex",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:113",
+        "id": "113",
+        "name": "Marlotherm heat transfer fluids",
+        "lookupName": "Marlotherm",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:136",
+        "id": "136",
+        "name": "Meltium deicer",
+        "lookupName": "Meltium",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:45",
+        "id": "45",
+        "name": "Neostar elastomer",
+        "lookupName": "Neostar",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:47",
+        "id": "47",
+        "name": "Optifilm enhancers",
+        "lookupName": "Optifilm",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:57",
+        "id": "57",
+        "name": "Probenz sodium benzoate",
+        "lookupName": "Probenz",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:128",
+        "id": "128",
+        "name": "ProGIT",
+        "lookupName": "Progit",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:129",
+        "id": "129",
+        "name": "Propcorn",
+        "lookupName": "Propcorn",
+        "count": 6,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:130",
+        "id": "130",
+        "name": "Protaq",
+        "lookupName": "Protaq",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:131",
+        "id": "131",
+        "name": "Protural",
+        "lookupName": "Protural",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:58",
+        "id": "58",
+        "name": "Provista copolymer",
+        "lookupName": "Provista",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:147",
+        "id": "147",
+        "name": "Scandinol DOM",
+        "lookupName": "Scandinol dom",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:63",
+        "id": "63",
+        "name": "Skydrol aviation hydraulic fluids",
+        "lookupName": "Skydrol",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:64",
+        "id": "64",
+        "name": "SkyKleen aviation solvent",
+        "lookupName": "Skykleen",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:65",
+        "id": "65",
+        "name": "Solus performance additives",
+        "lookupName": "Solus",
+        "count": 65,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:66",
+        "id": "66",
+        "name": "Spectar copolyester",
+        "lookupName": "Spectar",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:69",
+        "id": "69",
+        "name": "Sustane fragrance fixative",
+        "lookupName": "Sustane",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:70",
+        "id": "70",
+        "name": "Synergex amine additives",
+        "lookupName": "Synergex",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:72",
+        "id": "72",
+        "name": "TamiSolve dipolar aprotic solvent",
+        "lookupName": "Tamisolve",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:143",
+        "id": "143",
+        "name": "TEG-EH",
+        "lookupName": "teg-eh",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:73",
+        "id": "73",
+        "name": "Tenite cellulosics",
+        "lookupName": "Tenite",
+        "count": 48,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:74",
+        "id": "74",
+        "name": "Tenox antioxidants",
+        "lookupName": "Tenox",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:75",
+        "id": "75",
+        "name": "Tetrashield™",
+        "lookupName": "Tetrashield",
+        "count": 10,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:76",
+        "id": "76",
+        "name": "Texanol ester alcohol",
+        "lookupName": "Texanol",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:78",
+        "id": "78",
+        "name": "Therminol heat transfer fluid",
+        "lookupName": "Therminol",
+        "count": 16,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:79",
+        "id": "79",
+        "name": "TMPD glycol",
+        "lookupName": "TMPD",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:148",
+        "id": "148",
+        "name": "TOTM",
+        "lookupName": "totm",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:142",
+        "id": "142",
+        "name": "Triacetin",
+        "lookupName": "triacetin",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:80",
+        "id": "80",
+        "name": "Tritan copolyester",
+        "lookupName": "Tritan",
+        "count": 75,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:103",
+        "id": "103",
+        "name": "Trēva engineering bioplastic",
+        "lookupName": "TREVA",
+        "count": 18,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:88",
+        "id": "88",
+        "name": "TXIB formulation additive",
+        "lookupName": "TXIB",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:82",
+        "id": "82",
+        "name": "Vantex neutralizing amine additive",
+        "lookupName": "Vantex",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:83",
+        "id": "83",
+        "name": "Velate coalescents",
+        "lookupName": "Velate",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:132",
+        "id": "132",
+        "name": "VersaBond plasticizer",
+        "lookupName": "VersaBond",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:133",
+        "id": "133",
+        "name": "Versafix plasticizer",
+        "lookupName": "Versafix",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:134",
+        "id": "134",
+        "name": "VersaMax plasticizer",
+        "lookupName": "VersaMax",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "brands:115",
+        "id": "115",
+        "name": "Zendex agricultural solvents",
+        "lookupName": "Zendex",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      }
+    ]
+  },
+  {
+    "categoryName": "applications",
+    "categoryTitle": "Applications",
+    "values": [
+      {
+        "key": "applications:406",
+        "id": "406",
+        "name": "Adhesives",
+        "lookupName": "Solus-Adhesives",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:17",
+        "id": "17",
+        "name": "Adhesives & sealants",
+        "lookupName": "Adhesives Sealants",
+        "count": 31,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:225",
+        "id": "225",
+        "name": "Aerosol coating",
+        "lookupName": "Aerosol Coating",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:375",
+        "id": "375",
+        "name": "Aerospace",
+        "lookupName": "Aerospace-Transportation",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:353",
+        "id": "353",
+        "name": "Agriculture intermediates",
+        "lookupName": "Agriculture Intermediates",
+        "count": 15,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:332",
+        "id": "332",
+        "name": "Animal Nutrition",
+        "lookupName": "Animal-Nutrition",
+        "count": 55,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:355",
+        "id": "355",
+        "name": "Architectural coatings",
+        "lookupName": "Architectural coating",
+        "count": 44,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:156",
+        "id": "156",
+        "name": "Asphalt",
+        "lookupName": "Asphalt",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:374",
+        "id": "374",
+        "name": "Auto refinish",
+        "lookupName": "Auto Refinish Coatings",
+        "count": 88,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:262",
+        "id": "262",
+        "name": "Automotive coatings",
+        "lookupName": "Solus-Automotive",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:373",
+        "id": "373",
+        "name": "Automotive OEM",
+        "lookupName": "Automotive OEM Coatings",
+        "count": 106,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:191",
+        "id": "191",
+        "name": "Beverage packaging",
+        "lookupName": "Beverage Packaging",
+        "count": 13,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:399",
+        "id": "399",
+        "name": "Can coatings",
+        "lookupName": "Solus-Can",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:118",
+        "id": "118",
+        "name": "Catalysts",
+        "lookupName": "Catalysts",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:112",
+        "id": "112",
+        "name": "Childcare items",
+        "lookupName": "Childcare Items",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:226",
+        "id": "226",
+        "name": "Coil coatings",
+        "lookupName": "Coil Coating",
+        "count": 24,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:393",
+        "id": "393",
+        "name": "Color cosmetic packaging",
+        "lookupName": "Color cosmetic packaging",
+        "count": 92,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:159",
+        "id": "159",
+        "name": "Concrete",
+        "lookupName": "Concrete",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:357",
+        "id": "357",
+        "name": "Consumer housewares",
+        "lookupName": "Consumer Housewares",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:408",
+        "id": "408",
+        "name": "Consumer products",
+        "lookupName": "Solus-Consumer",
+        "count": 8,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:360",
+        "id": "360",
+        "name": "Cosmetic and personal care intermediates",
+        "lookupName": "Cosmetic and personal care intermediate",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:361",
+        "id": "361",
+        "name": "Cosmetic ingredients - eyes & face",
+        "lookupName": "Cosmetic ingredients - eyes face",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:362",
+        "id": "362",
+        "name": "Cosmetic ingredients - lips",
+        "lookupName": "Cosmetic ingredients - lips",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:363",
+        "id": "363",
+        "name": "Cosmetic ingredients - nails",
+        "lookupName": "Cosmetic ingredients - nails",
+        "count": 6,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:131",
+        "id": "131",
+        "name": "Decorative laminates",
+        "lookupName": "Decorative Laminates",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:372",
+        "id": "372",
+        "name": "Dental aligners",
+        "lookupName": "Medical-Dental Aligners",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:124",
+        "id": "124",
+        "name": "Electronic chemicals",
+        "lookupName": "Electronic Chemicals",
+        "count": 27,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:125",
+        "id": "125",
+        "name": "Electronic device housings",
+        "lookupName": "Device Housing",
+        "count": 21,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:162",
+        "id": "162",
+        "name": "Exterior architectural coatings",
+        "lookupName": "Exterior Architectural Coatings",
+        "count": 44,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:253",
+        "id": "253",
+        "name": "Eyeglass frames",
+        "lookupName": "Eyeglass frame",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:289",
+        "id": "289",
+        "name": "Fabric care",
+        "lookupName": "Fabric Care",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:358",
+        "id": "358",
+        "name": "Film for food packaging",
+        "lookupName": "Film",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:163",
+        "id": "163",
+        "name": "Flooring",
+        "lookupName": "Flooring",
+        "count": 19,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:348",
+        "id": "348",
+        "name": "Fluid management components",
+        "lookupName": "Medical-Fluid Management Components",
+        "count": 28,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:190",
+        "id": "190",
+        "name": "Food & beverage ingredients",
+        "lookupName": "Food Beverage Ingredients",
+        "count": 16,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:192",
+        "id": "192",
+        "name": "Food packaging",
+        "lookupName": "Food Packaging",
+        "count": 21,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:365",
+        "id": "365",
+        "name": "Fragrance ingredients",
+        "lookupName": "Fragrance ingredients",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:394",
+        "id": "394",
+        "name": "Fragrance packaging",
+        "lookupName": "Fragrance packaging",
+        "count": 65,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:128",
+        "id": "128",
+        "name": "Fuel",
+        "lookupName": "Fuel",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:7",
+        "id": "7",
+        "name": "Fungicides",
+        "lookupName": "Fungicides",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:318",
+        "id": "318",
+        "name": "Gas filtration",
+        "lookupName": "Gas",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:227",
+        "id": "227",
+        "name": "General industrial coatings",
+        "lookupName": "General Industrial",
+        "count": 88,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:133",
+        "id": "133",
+        "name": "Graphic arts & supplies",
+        "lookupName": "Graphic Arts",
+        "count": 88,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:8",
+        "id": "8",
+        "name": "Growth regulators & stimulators",
+        "lookupName": "Growth regulators stimulators",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:291",
+        "id": "291",
+        "name": "Hard surface care",
+        "lookupName": "Hard Surfaces",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:134",
+        "id": "134",
+        "name": "Household packaging",
+        "lookupName": "Home, Garden Auto Packaging",
+        "count": 63,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:403",
+        "id": "403",
+        "name": "Industrial",
+        "lookupName": "Solus-Industrial",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:135",
+        "id": "135",
+        "name": "Industrial cleaners",
+        "lookupName": "Industrial Cleaners",
+        "count": 15,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:228",
+        "id": "228",
+        "name": "Industrial maintenance & marine coatings",
+        "lookupName": "Industrial Maintenance Marine",
+        "count": 32,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:398",
+        "id": "398",
+        "name": "Inks",
+        "lookupName": "Solus-Inks",
+        "count": 31,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:136",
+        "id": "136",
+        "name": "Institutional cleaners",
+        "lookupName": "Institutional Cleaners",
+        "count": 13,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:109",
+        "id": "109",
+        "name": "Intermediates",
+        "lookupName": "Intermediates",
+        "count": 24,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:254",
+        "id": "254",
+        "name": "Lenses",
+        "lookupName": "Lens",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:25",
+        "id": "25",
+        "name": "Lighting",
+        "lookupName": "Lighting",
+        "count": 36,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:319",
+        "id": "319",
+        "name": "Liquid filtration",
+        "lookupName": "Liquid",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:222",
+        "id": "222",
+        "name": "Lubricants",
+        "lookupName": "Lubricants",
+        "count": 37,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:347",
+        "id": "347",
+        "name": "Medical device housings",
+        "lookupName": "Medical-Electronic Device Housings",
+        "count": 11,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:166",
+        "id": "166",
+        "name": "Molding and trim interior",
+        "lookupName": "Moulding and Trim Interior",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:407",
+        "id": "407",
+        "name": "Nail",
+        "lookupName": "Solus-Nail",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:121",
+        "id": "121",
+        "name": "Neutralizing Agents",
+        "lookupName": "Neutralizing Agents",
+        "count": 12,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:366",
+        "id": "366",
+        "name": "Oral care ingredients",
+        "lookupName": "Oral care ingredients",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:283",
+        "id": "283",
+        "name": "Oral hygiene",
+        "lookupName": "Oral Hygiene",
+        "count": 12,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:404",
+        "id": "404",
+        "name": "Other",
+        "lookupName": "Solus-Other",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:376",
+        "id": "376",
+        "name": "Other automotive",
+        "lookupName": "Other Automotive",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:379",
+        "id": "379",
+        "name": "Other transportation",
+        "lookupName": "Other transportation",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:401",
+        "id": "401",
+        "name": "Packaging",
+        "lookupName": "Solus-Packaging",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:400",
+        "id": "400",
+        "name": "Paper coatings",
+        "lookupName": "Solus-Paper",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:139",
+        "id": "139",
+        "name": "Personal care & cosmetics packaging",
+        "lookupName": "Personal Care Cosmetics Packaging",
+        "count": 112,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:367",
+        "id": "367",
+        "name": "Personal care ingredients",
+        "lookupName": "Personal care ingredients",
+        "count": 25,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:395",
+        "id": "395",
+        "name": "Personal care packaging",
+        "lookupName": "Personal care packaging",
+        "count": 66,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:370",
+        "id": "370",
+        "name": "Pharmaceutical excipients",
+        "lookupName": "Pharmaceutical excipients",
+        "count": 8,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:371",
+        "id": "371",
+        "name": "Pharmaceutical intermediates",
+        "lookupName": "Pharmaceutical Intermediates",
+        "count": 40,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:345",
+        "id": "345",
+        "name": "Pharmaceutical packaging",
+        "lookupName": "Medical-Pharmaceutical Packaging",
+        "count": 9,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:346",
+        "id": "346",
+        "name": "Rigid medical packaging",
+        "lookupName": "Medical-Rigid Medical Packaging",
+        "count": 6,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:29",
+        "id": "29",
+        "name": "Roofing",
+        "lookupName": "Roofing",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:255",
+        "id": "255",
+        "name": "Safety glasses/shields",
+        "lookupName": "Safety Glasses-Shields",
+        "count": 17,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:14",
+        "id": "14",
+        "name": "Seed treatment",
+        "lookupName": "Seed treatment",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:368",
+        "id": "368",
+        "name": "Skin care ingredients",
+        "lookupName": "Skin care ingredients",
+        "count": 5,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:396",
+        "id": "396",
+        "name": "Skin care packaging",
+        "lookupName": "Skin care packaging",
+        "count": 76,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:167",
+        "id": "167",
+        "name": "Skylights",
+        "lookupName": "Skylights",
+        "count": 4,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:292",
+        "id": "292",
+        "name": "Soaps & detergents",
+        "lookupName": "Home Care - Soaps Detergents",
+        "count": 10,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:107",
+        "id": "107",
+        "name": "Soil fumigants",
+        "lookupName": "Soil fumigants",
+        "count": 2,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:382",
+        "id": "382",
+        "name": "Solvent",
+        "lookupName": "Solvent-Types",
+        "count": 20,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:110",
+        "id": "110",
+        "name": "Solvents",
+        "lookupName": "Solvents",
+        "count": 7,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:356",
+        "id": "356",
+        "name": "Sports surfaces",
+        "lookupName": "Sports Surfaces",
+        "count": 1,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:381",
+        "id": "381",
+        "name": "Truck/Bus/RV",
+        "lookupName": "Truck-Bus-RV",
+        "count": 11,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:140",
+        "id": "140",
+        "name": "Visual merchandising",
+        "lookupName": "Visual Merchandising - Application",
+        "count": 70,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:168",
+        "id": "168",
+        "name": "Walls",
+        "lookupName": "Walls",
+        "count": 10,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:67",
+        "id": "67",
+        "name": "Water treatment",
+        "lookupName": "Water treatment",
+        "count": 14,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:169",
+        "id": "169",
+        "name": "Windows",
+        "lookupName": "Windows",
+        "count": 3,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:132",
+        "id": "132",
+        "name": "Wood coatings",
+        "lookupName": "Wood Coatings",
+        "count": 48,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "applications:397",
+        "id": "397",
+        "name": "Wood coatings",
+        "lookupName": "Solus-Wood",
+        "count": 16,
+        "level": "Parent",
+        "parentId": null
+      }
+    ]
+  },
+  {
+    "categoryName": "availability",
+    "categoryTitle": "Authorized distributor availability",
+    "values": [
+      {
+        "key": "availability:1",
+        "id": "1",
+        "name": "Asia Pacific",
+        "lookupName": "APR",
+        "count": 841,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "availability:2",
+        "id": "2",
+        "name": "Europe, Middle East & Africa",
+        "lookupName": "EMEA",
+        "count": 778,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "availability:3",
+        "id": "3",
+        "name": "North America",
+        "lookupName": "NAR",
+        "count": 723,
+        "level": "Parent",
+        "parentId": null
+      },
+      {
+        "key": "availability:4",
+        "id": "4",
+        "name": "Latin America",
+        "lookupName": "LAR",
+        "count": 658,
+        "level": "Parent",
+        "parentId": null
+      }
+    ]
+  }
+]

@@ -270,6 +270,7 @@ function attachChatWebSocket({
       }
 
       try {
+        let streamedAnswer = false;
         const answer = await orchestrator.answer({
           message: event.message,
           history: conversations.modelHistory(conversation),
@@ -283,6 +284,14 @@ function attachChatWebSocket({
               stage,
             });
           },
+          onDelta(delta) {
+            streamedAnswer = true;
+            send(socket, {
+              type: "answer.delta",
+              requestId: event.requestId,
+              delta,
+            });
+          },
         });
         if (controller.signal.aborted) return;
 
@@ -291,12 +300,15 @@ function attachChatWebSocket({
           userMessage: event.message,
           assistantMessage: { content: answer.text, sources, products },
           productFgmns: products.map((product) => product.fgmn),
+          countsAsProduct: !["social", "out-of-scope"].includes(answer.kind),
         });
-        send(socket, {
-          type: "answer.delta",
-          requestId: event.requestId,
-          delta: answer.text,
-        });
+        if (!streamedAnswer) {
+          send(socket, {
+            type: "answer.delta",
+            requestId: event.requestId,
+            delta: answer.text,
+          });
+        }
         send(socket, {
           type: "answer.sources",
           requestId: event.requestId,

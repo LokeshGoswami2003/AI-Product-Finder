@@ -36,7 +36,7 @@ export function chatReducer(state, action) {
         error: null,
       };
     case "request.accepted":
-      return { ...state, progress: "Searching product evidence…" };
+      return { ...state, progress: "Searching the Eastman catalog…" };
     case "request.progress":
       return { ...state, progress: progressLabel(action.stage) };
     case "answer.delta": {
@@ -106,9 +106,9 @@ function updateAnswer(state, requestId, values) {
 
 function progressLabel(stage) {
   const labels = {
-    retrieving: "Searching product evidence…",
-    grounding: "Checking sources…",
-    generating: "Preparing a grounded answer…",
+    retrieving: "Searching the Eastman catalog…",
+    grounding: "Reviewing product information…",
+    generating: "Preparing your answer…",
   };
   return labels[stage] || "Working on your request…";
 }

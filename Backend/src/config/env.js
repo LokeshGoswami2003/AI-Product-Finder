@@ -3,6 +3,13 @@ const { z } = require("zod");
 const positiveInteger = (defaultValue) =>
   z.coerce.number().int().positive().default(defaultValue);
 
+const booleanFromEnvironment = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  if (/^(?:1|true)$/i.test(value)) return true;
+  if (/^(?:0|false)$/i.test(value)) return false;
+  return value;
+}, z.boolean());
+
 const envSchema = z
   .object({
     NODE_ENV: z
@@ -24,6 +31,16 @@ const envSchema = z
       .string()
       .url()
       .default("https://ai-gateway.vercel.sh/v1"),
+    EMBEDDING_ENABLED: booleanFromEnvironment.default(false),
+    EMBEDDING_API_KEY: z.string().min(20).optional(),
+    EMBEDDING_MODEL: z.string().min(1).default("google/gemini-embedding-2"),
+    EMBEDDING_BASE_URL: z
+      .string()
+      .url()
+      .default("https://openrouter.ai/api/v1"),
+    EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(768),
+    EMBEDDING_BATCH_SIZE: positiveInteger(64),
+    EMBEDDING_TIMEOUT_MS: positiveInteger(30000),
     EASTMAN_PRODUCT_FINDER_URL: z.string().url(),
     CORPUS_ARTIFACT_DIR: z.string().min(1).default("./artifacts"),
     CORPUS_WARN_AGE_HOURS: positiveInteger(48),
@@ -47,6 +64,13 @@ const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ["VERCEL_AI_GATEWAY_API_KEY"],
         message: "A Vercel AI Gateway API key is required",
+      });
+    }
+    if (env.EMBEDDING_ENABLED && !env.EMBEDDING_API_KEY) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["EMBEDDING_API_KEY"],
+        message: "An embedding API key is required when embeddings are enabled",
       });
     }
   });

@@ -1,6 +1,7 @@
 const path = require("node:path");
 
 const { loadActiveRelease } = require("../src/corpus/load-release");
+const { EmbeddingClient } = require("../src/embeddings/client");
 const { ProductRetriever } = require("../src/retrieval/retriever");
 
 const BENCHMARKS = [
@@ -20,7 +21,25 @@ async function main() {
     process.argv[2] || path.join(__dirname, "..", "..", "artifacts"),
   );
   const release = await loadActiveRelease(artifactDir);
-  const retriever = new ProductRetriever(release);
+  const embeddingsEnabled = /^(?:1|true)$/i.test(
+    process.env.EMBEDDING_ENABLED || "",
+  );
+  const embeddingClient =
+    embeddingsEnabled && release.vectorSearch
+      ? new EmbeddingClient({
+          apiKey:
+            process.env.EMBEDDING_API_KEY ||
+            process.env.VERCEL_AI_GATEWAY_API_KEY,
+          model: process.env.EMBEDDING_MODEL,
+          baseUrl:
+            process.env.EMBEDDING_BASE_URL ||
+            process.env.VERCEL_AI_GATEWAY_BASE_URL,
+          batchSize: Number(process.env.EMBEDDING_BATCH_SIZE || 64),
+          timeoutMs: Number(process.env.EMBEDDING_TIMEOUT_MS || 30000),
+          expectedDimensions: release.manifest.embeddings.dimensions,
+        })
+      : null;
+  const retriever = new ProductRetriever({ ...release, embeddingClient });
   const failures = [];
 
   for (const benchmark of BENCHMARKS) {

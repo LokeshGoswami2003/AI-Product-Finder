@@ -8,7 +8,7 @@ const SOCIAL_RESPONSES = {
   capability:
     "I can help identify Eastman products, compare up to three relevant options, and explain technical or safety information from official product, TDS, and regional SDS sources. Start with a product name, application, material, performance requirement, or region.",
   outOfScope:
-    "I’m focused on Eastman product discovery and official product documentation. Ask me about a product, application, performance requirement, comparison, TDS, SDS, or how to contact Eastman product support.",
+    "I’m here specifically for Eastman product questions, so I can’t help with that topic. Ask me about a product, application, performance requirement, comparison, TDS, SDS, or how to contact Eastman product support.",
 };
 
 function normalizeSocialText(message) {
@@ -62,16 +62,6 @@ function classifyConversationalMessage(message) {
       type: "social",
       subtype: "capability",
       response: SOCIAL_RESPONSES.capability,
-    };
-  }
-
-  const clearlyOutOfScope =
-    /^(?:tell me (?:a )?joke|write (?:me )?(?:a )?(?:poem|story|email|code)|(?:write|generate|create) .*(?:code|program|script)|what(?:s| is) the weather(?: today)?|give me (?:the )?(?:news|sports results)|(?:latest|todays?) .*(?:news|football|cricket|sports|score)|who (?:is|was) (?:the )?(?:president|prime minister|actor|singer)|who won (?:the )?(?:game|match|election)|help me (?:code|debug|program)|give me (?:a )?recipe)$/;
-  if (clearlyOutOfScope.test(text)) {
-    return {
-      type: "out-of-scope",
-      subtype: "out-of-scope",
-      response: SOCIAL_RESPONSES.outOfScope,
     };
   }
 

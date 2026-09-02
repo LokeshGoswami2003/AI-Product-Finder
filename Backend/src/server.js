@@ -9,6 +9,8 @@ const {
 const { ChatOrchestrator } = require("./chat/orchestrator");
 const { loadActiveRelease } = require("./corpus/load-release");
 const { parseEnv } = require("./config/env");
+const { EmbeddingClient } = require("./embeddings/client");
+const { EMBEDDING_PROFILE } = require("./embeddings/retrieval-text");
 const {
   EastmanDocumentClient,
 } = require("./documents/eastman-document-client");
@@ -49,7 +51,37 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
   const server = http.createServer(app);
 
   if (corpus) {
-    const retriever = new ProductRetriever(corpus);
+    let embeddingClient = null;
+    if (config.EMBEDDING_ENABLED && corpus.vectorSearch) {
+      const releaseEmbeddings = corpus.manifest.embeddings;
+      if (releaseEmbeddings.profile !== EMBEDDING_PROFILE) {
+        throw new Error(
+          `Embedding profile mismatch: release uses ${releaseEmbeddings.profile || "none"}, runtime uses ${EMBEDDING_PROFILE}`,
+        );
+      }
+      if (releaseEmbeddings.model !== config.EMBEDDING_MODEL) {
+        throw new Error(
+          `Embedding model mismatch: release uses ${releaseEmbeddings.model}, configuration uses ${config.EMBEDDING_MODEL}`,
+        );
+      }
+      if (
+        config.EMBEDDING_DIMENSIONS &&
+        releaseEmbeddings.dimensions !== config.EMBEDDING_DIMENSIONS
+      ) {
+        throw new Error(
+          `Embedding dimension mismatch: release uses ${releaseEmbeddings.dimensions}, configuration uses ${config.EMBEDDING_DIMENSIONS}`,
+        );
+      }
+      embeddingClient = new EmbeddingClient({
+        apiKey: config.EMBEDDING_API_KEY || config.VERCEL_AI_GATEWAY_API_KEY,
+        model: config.EMBEDDING_MODEL,
+        baseUrl: config.EMBEDDING_BASE_URL,
+        batchSize: config.EMBEDDING_BATCH_SIZE,
+        timeoutMs: config.EMBEDDING_TIMEOUT_MS,
+        expectedDimensions: releaseEmbeddings.dimensions,
+      });
+    }
+    const retriever = new ProductRetriever({ ...corpus, embeddingClient });
     const client =
       modelClient ||
       new VercelAIGatewayClient({

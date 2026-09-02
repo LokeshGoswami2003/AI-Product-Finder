@@ -96,10 +96,22 @@ class ConversationStore {
   completeRequest(
     conversation,
     requestId,
-    { userMessage, assistantMessage, productFgmns = [] },
+    {
+      userMessage,
+      assistantMessage,
+      productFgmns = [],
+      countsAsProduct: completedAsProduct,
+    },
   ) {
     if (conversation.activeRequest?.requestId !== requestId) return false;
-    const countsAsProduct = conversation.activeRequest.countsAsProduct;
+    const reservedAsProduct = conversation.activeRequest.countsAsProduct;
+    const countsAsProduct =
+      completedAsProduct === undefined
+        ? reservedAsProduct
+        : reservedAsProduct && completedAsProduct;
+    if (reservedAsProduct && !countsAsProduct) {
+      conversation.productTurns = Math.max(0, conversation.productTurns - 1);
+    }
     conversation.activeRequest = null;
     const userEntry = { id: requestId, role: "user", content: userMessage };
     const assistantEntry = {

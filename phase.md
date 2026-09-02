@@ -1,6 +1,6 @@
 # AI Product Finder implementation status
 
-Updated: 2026-08-30
+Updated: 2026-09-02
 
 ## Phase 1 / Phase A - Foundation
 
@@ -33,6 +33,8 @@ Completed:
 - Added candidate validation for product counts, unique IDs, chunks, and source URL allowlisting.
 - Added temporary-directory release creation and atomic `current.json` pointer activation.
 - Added a local ingestion CLI and focused ingestion tests.
+- Added optional batched embedding generation with model/dimension metadata,
+  content-hash linkage, and a separate versioned `embeddings.jsonl` artifact.
 
 Pending:
 
@@ -68,10 +70,14 @@ Completed:
   `zai/glm-5.3-flash`.
 - Added explicit Vercel AI Gateway errors and retryability metadata.
 - Added the local `sampel.env` secret file to Git ignore rules.
+- Connected embedded releases to the validated in-memory vector index.
+- Added query embedding for non-exact searches, hybrid RRF fusion, strict
+  release/model/dimension validation, and lexical fallback on provider failure.
 
 Pending:
 
-- Generate embeddings during Phase B and connect query embedding generation to vector search.
+- Select and benchmark the production embedding model, build an embedded release,
+  and enable the feature flag after evaluation.
 - Populate facet memberships before enabling region and other metadata hard filters.
 - Expand the benchmark with product families, applications, grades, and negative cases.
 - Calibrate retrieval limits, RRF constants, and confidence policy from evaluation results.

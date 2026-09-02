@@ -69,7 +69,10 @@ test("chat orchestration retrieves before generation and bounds model evidence",
   assert.match(answer.text, /AdapT 100/);
   assert.match(request.messages.at(-1).content, /71103853/);
   assert.match(request.messages.at(-1).content, /Density: 1\.04 g\/cm3/);
-  assert.match(request.messages[0].content, /only from the supplied evidence/i);
+  assert.match(
+    request.messages[0].content,
+    /only from the supplied catalog information/i,
+  );
   assert.match(
     request.messages[0].content,
     /experienced Eastman product sales representative/i,
@@ -87,11 +90,15 @@ test("chat orchestration retrieves before generation and bounds model evidence",
   assert.deepEqual(answer.usage, { total_tokens: 42 });
 });
 
-test("chat orchestration does not call the model without evidence", async () => {
+test("chat orchestration uses retrieval evidence to reject unrelated topics", async () => {
   let modelCalled = false;
+  const retrievalQueries = [];
   const orchestrator = new ChatOrchestrator({
     retriever: {
-      retrieve: async () => ({ outcome: "no-evidence", results: [] }),
+      retrieve: async (query) => {
+        retrievalQueries.push(query);
+        return { outcome: "no-evidence", results: [] };
+      },
     },
     documentClient: {
       enrichProduct: async () => assert.fail("must not fetch documents"),
@@ -103,13 +110,30 @@ test("chat orchestration does not call the model without evidence", async () => 
     },
   });
 
-  const answer = await orchestrator.answer({
-    message: "Unknown product",
-    history: [],
-  });
+  for (const message of [
+    "What is the capital of China?",
+    "Write a sorting algorithm",
+    "Give me a pasta recipe",
+    "Who won yesterday's football match?",
+    "Explain quantum gravity",
+  ]) {
+    const answer = await orchestrator.answer({ message, history: [] });
+    assert.equal(answer.kind, "out-of-scope");
+    assert.deepEqual(answer.retrieval.results, []);
+    assert.match(
+      answer.text,
+      /doesn’t appear to match the Eastman product catalog/i,
+    );
+  }
 
   assert.equal(modelCalled, false);
-  assert.match(answer.text, /could not find enough catalog evidence/i);
+  assert.deepEqual(retrievalQueries, [
+    "What is the capital of China?",
+    "Write a sorting algorithm",
+    "Give me a pasta recipe",
+    "Who won yesterday's football match?",
+    "Explain quantum gravity",
+  ]);
 });
 
 test("chat orchestration answers social messages without retrieval, documents, or model calls", async () => {

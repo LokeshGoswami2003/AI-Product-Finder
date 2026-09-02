@@ -267,7 +267,10 @@ a {
   box-shadow:
     0 1.5rem 4rem rgba(20, 42, 55, 0.26),
     0 0.2rem 0.8rem rgba(20, 42, 55, 0.12);
-  transition: width 200ms ease, height 200ms ease, border-radius 200ms ease;
+  transition:
+    width 200ms ease,
+    height 200ms ease,
+    border-radius 200ms ease;
 }
 
 .widget-header {
@@ -515,6 +518,21 @@ a {
 
 .message-content--formatted li::marker {
   color: var(--eastman-blue);
+}
+
+.message--streaming .message-content--formatted::after {
+  width: 0.42rem;
+  height: 0.9rem;
+  align-self: end;
+  background: var(--eastman-blue);
+  content: "";
+  animation: response-cursor 900ms steps(2, jump-none) infinite;
+}
+
+@keyframes response-cursor {
+  50% {
+    opacity: 0;
+  }
 }
 
 .product-card {

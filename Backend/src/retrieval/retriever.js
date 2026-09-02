@@ -2,6 +2,7 @@ const { ExactResolver } = require("./exact-resolver");
 const { LexicalIndex } = require("./lexical-index");
 const { reciprocalRankFusion } = require("./rank-fusion");
 const { resolveExplicitRegion } = require("./region");
+const { formatQueryForEmbedding } = require("../embeddings/retrieval-text");
 const {
   analyzeRequirements,
   rankProductsByRequirements,
@@ -23,6 +24,8 @@ const ORDINALS = [
 ];
 const OTHER_PRODUCTS_PATTERN =
   /\b(?:other|another|alternatives?|more options?)\b/i;
+const MIN_VECTOR_RELEVANCE = 0.62;
+const MIN_STRONG_LEXICAL_SCORE = 50;
 
 function sourceFor(product) {
   return {
@@ -53,12 +56,18 @@ function selectContextProducts(query, products) {
 }
 
 class ProductRetriever {
-  constructor({ products, memberships, vectorSearch = null }) {
+  constructor({
+    products,
+    memberships,
+    vectorSearch = null,
+    embeddingClient = null,
+  }) {
     this.products = new Map(products.map((product) => [product.fgmn, product]));
     this.memberships = memberships;
     this.exactResolver = new ExactResolver(products);
     this.lexicalIndex = new LexicalIndex(products);
     this.vectorSearch = vectorSearch;
+    this.embeddingClient = embeddingClient;
   }
 
   async retrieve(query, { queryVector, limit = 5, context = {} } = {}) {
@@ -131,9 +140,39 @@ class ProductRetriever {
       ),
       lexical,
     );
+    let effectiveQueryVector = queryVector;
+    if (!effectiveQueryVector && this.vectorSearch && this.embeddingClient) {
+      try {
+        effectiveQueryVector = await this.embeddingClient.embed(
+          formatQueryForEmbedding(searchQuery),
+        );
+      } catch (error) {
+        process.stderr.write(
+          `Query embedding unavailable; using lexical retrieval: ${error.message}\n`,
+        );
+      }
+    }
+
     const rankings = [requirementRanking.results];
-    if (queryVector && this.vectorSearch) {
-      rankings.push(this.vectorSearch.search(queryVector));
+    let vectorRanking = [];
+    if (effectiveQueryVector && this.vectorSearch) {
+      vectorRanking = this.vectorSearch
+        .search(effectiveQueryVector)
+        .filter((result) => !excludedFgmns.has(result.fgmn));
+      rankings.push(vectorRanking);
+    }
+
+    if (
+      vectorRanking.length > 0 &&
+      vectorRanking[0].score < MIN_VECTOR_RELEVANCE &&
+      (lexical[0]?.score || 0) < MIN_STRONG_LEXICAL_SCORE
+    ) {
+      return {
+        outcome: "no-evidence",
+        region: resolveExplicitRegion(query),
+        requirements: requirementRanking.requirements,
+        results: [],
+      };
     }
 
     let fused = reciprocalRankFusion(rankings, { limit: Math.max(limit, 25) });
@@ -177,4 +216,10 @@ class ProductRetriever {
   }
 }
 
-module.exports = { ProductRetriever, selectContextProducts, sourceFor };
+module.exports = {
+  MIN_STRONG_LEXICAL_SCORE,
+  MIN_VECTOR_RELEVANCE,
+  ProductRetriever,
+  selectContextProducts,
+  sourceFor,
+};

@@ -110,6 +110,85 @@ test("retriever returns exact, lexical, and safe incomplete-region outcomes", as
   );
 });
 
+test("retriever embeds only non-exact searches and fuses semantic results", async () => {
+  let embeddingCalls = 0;
+  let embeddedQuery;
+  const retriever = new ProductRetriever({
+    products,
+    memberships: { complete: false, facetToProducts: {} },
+    vectorSearch: new VectorSearch(
+      [
+        { fgmn: "100", chunkId: "a", vector: [1, 0] },
+        { fgmn: "201", chunkId: "b", vector: [0, 1] },
+      ],
+      2,
+    ),
+    embeddingClient: {
+      embed: async (query) => {
+        embeddingCalls += 1;
+        embeddedQuery = query;
+        return [0, 1];
+      },
+    },
+  });
+
+  await retriever.retrieve("AdapT 100");
+  assert.equal(embeddingCalls, 0);
+
+  const semantic = await retriever.retrieve("bonding formulation", {
+    limit: 1,
+  });
+  assert.equal(embeddingCalls, 1);
+  assert.equal(
+    embeddedQuery,
+    "task: search result | query: bonding formulation",
+  );
+  assert.equal(semantic.results[0].product.fgmn, "201");
+});
+
+test("retriever falls back to lexical results when query embedding fails", async () => {
+  const retriever = new ProductRetriever({
+    products,
+    memberships: { complete: false, facetToProducts: {} },
+    vectorSearch: new VectorSearch(
+      [
+        { fgmn: "100", chunkId: "a", vector: [1, 0] },
+        { fgmn: "201", chunkId: "b", vector: [0, 1] },
+      ],
+      2,
+    ),
+    embeddingClient: {
+      embed: async () => {
+        throw new Error("provider unavailable");
+      },
+    },
+  });
+
+  const result = await retriever.retrieve("adhesive additive", { limit: 1 });
+  assert.equal(result.results[0].product.fgmn, "201");
+});
+
+test("retriever rejects weak lexical and semantic matches", async () => {
+  const retriever = new ProductRetriever({
+    products,
+    memberships: { complete: false, facetToProducts: {} },
+    vectorSearch: new VectorSearch(
+      [
+        { fgmn: "100", chunkId: "a", vector: [1, 0, 0] },
+        { fgmn: "201", chunkId: "b", vector: [0, 1, 0] },
+      ],
+      3,
+    ),
+  });
+
+  const result = await retriever.retrieve("capital of china", {
+    queryVector: [0, 0, 1],
+  });
+
+  assert.equal(result.outcome, "no-evidence");
+  assert.deepEqual(result.results, []);
+});
+
 test("retriever resolves contextual pronouns, ordinals, and alternative searches", async () => {
   const retriever = new ProductRetriever({
     products,

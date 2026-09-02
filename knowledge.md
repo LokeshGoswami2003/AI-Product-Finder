@@ -1534,16 +1534,26 @@ remains in Phase D, and ingestion/artifact schemas remain in Phase B.
 
 Minimal Phase C implementation started on 2026-08-30. Exact and lexical retrieval,
 generic in-memory vector search, RRF, region recognition, source building, and a
-real-corpus benchmark are implemented. Semantic retrieval remains inactive until
-Phase B produces embeddings, and region filtering remains clarification-only until
-facet memberships are complete. The MVP generation provider is Vercel AI Gateway
-with `zai/glm-5.3-flash`; chat orchestration is implemented in Phase D.
+real-corpus benchmark are implemented. The semantic path can now generate a separate
+versioned `embeddings.jsonl` artifact during ingestion, validate and load it into the
+in-memory index, and embed non-exact queries for hybrid RRF retrieval. It is feature
+gated and falls back to lexical retrieval if query embedding fails. The active corpus
+remains lexical until a production embedding model is selected, benchmarked, and used
+to publish a new release. Region filtering remains clarification-only until facet
+memberships are complete. The MVP generation provider is Vercel AI Gateway with
+`zai/glm-5.3-flash`; chat orchestration is implemented in Phase D.
 
 On 2026-09-02, broad recommendations gained deterministic requirement-aware
 reranking and product-family diversification. The reported transparent BPA-free
 plastic-bottle query now returns actual clear bottle/container copolyesters and
 excludes Benzoflex 9-88, AQ 38S, and DuraStar MN610. Exact product questions still
 bypass recommendation reranking. The active-corpus benchmark now covers four cases.
+
+Also on 2026-09-02, the embedding client, optional batched ingestion, release metadata,
+content-hash validation, startup vector loading, exact-query bypass, query-time semantic
+retrieval, and lexical fail-open behavior were implemented. Set `EMBEDDING_ENABLED=true`
+with a supported `EMBEDDING_MODEL` only when creating and serving the same embedded
+release; model and dimensions are checked before hybrid retrieval is activated.
 
 ### Phase D — backend/chat
 
