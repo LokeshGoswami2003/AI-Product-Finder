@@ -148,6 +148,7 @@ class ChatOrchestrator {
     const retrievalQuery = stripLeadingGreeting(message);
     const retrieval = await this.retriever.retrieve(retrievalQuery, {
       context: retrievalContext,
+      signal,
     });
     let knowledgeFallback = false;
     if (retrieval.outcome === "no-evidence" || retrieval.results.length === 0) {

@@ -37,6 +37,7 @@ const envSchema = z
     WEB_SEARCH_TIMEOUT_MS: positiveInteger(15000),
     EMBEDDING_ENABLED: booleanFromEnvironment.default(false),
     EMBEDDING_API_KEY: z.string().min(20).optional(),
+    EMBEDDING_BACKUP_API_KEY: z.string().min(20).optional(),
     EMBEDDING_MODEL: z.string().min(1).default("google/gemini-embedding-2"),
     EMBEDDING_BASE_URL: z
       .string()

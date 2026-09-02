@@ -38,9 +38,8 @@ async function main() {
   const embeddingClient =
     embeddingsEnabled && release.vectorSearch
       ? new EmbeddingClient({
-          apiKey:
-            process.env.EMBEDDING_API_KEY ||
-            process.env.VERCEL_AI_GATEWAY_API_KEY,
+          apiKey: process.env.EMBEDDING_API_KEY,
+          backupApiKey: process.env.EMBEDDING_BACKUP_API_KEY,
           model: process.env.EMBEDDING_MODEL,
           baseUrl:
             process.env.EMBEDDING_BASE_URL ||

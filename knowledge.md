@@ -42,7 +42,7 @@ Eastman endpoint behavior documented here was reverse-engineered from public web
 
 ### Recommended solution
 
-Load the versioned local product corpus into Express memory. For each substantive chat request, use exact and lexical/fuzzy retrieval, deterministic requirement-aware reranking, product-family diversification, and validated recent-product context. Enrich no more than three products with query-relevant live Eastman TDS/SDS evidence, and send only that bounded evidence and server-owned history to `zai/glm-5.3-flash` through Vercel AI Gateway. The model does not receive the full `productfinder.json`. Return explanatory text separately from deterministic product cards and official source links. Semantic embeddings, complete facet memberships, token streaming, and deterministic comparison tables remain future improvements.
+Load the versioned local product corpus and complete Gemini vector artifact into Express memory. For each substantive chat request, use exact, lexical/fuzzy, semantic, deterministic requirement-aware, and validated recent-product context. Enrich no more than three products with query-relevant Eastman evidence, then stream a bounded, evidence-tiered answer from `zai/glm-5.3-flash`. The model does not receive the full `productfinder.json`. Complete facet memberships, captured canonical links, and deterministic comparison tables remain future improvements.
 
 ## 2. MVP goals and boundaries
 
@@ -473,7 +473,7 @@ flowchart LR
 - No persistent or external conversation store; bounded context exists only in Express process memory for the signed-session lifetime.
 - No database lookup or network vector service.
 - Product/index artifacts load once at startup and swap only after validation.
-- Exact and lexical retrieval operate without query embeddings; semantic retrieval is not active yet.
+- Exact matches bypass query embeddings; non-exact requests use Gemini query embeddings with lexical fail-open behavior.
 - Product cards and comparisons come from server-owned validated data.
 - The configured gateway model produces explanation, synthesis, and follow-up language—not authoritative identifiers or document URLs.
 
@@ -780,7 +780,7 @@ For broad recommendation requests, the normalized 979-product corpus remains ava
 
 When the query contains a bottle/container requirement and at least one catalog record has matching application evidence, that evidence gates the final candidates. Remaining products are ordered by weighted requirement coverage, lexical score, and stable name ordering. Near-identical names are greedily diversified so a broad request does not return only Renew percentages or mold-release variants of one base family. Exact FGMN/name questions bypass this recommendation reranker, allowing users to ask directly about any catalog product.
 
-This layer is a precision safeguard while facet memberships and embeddings remain incomplete; it is not a general regulatory classifier. Unsupported requirements remain visible gaps for the grounded answer or Eastman inquiry flow.
+This layer is a precision safeguard while facet memberships remain incomplete; it is not a general regulatory classifier. Unsupported requirements remain visible gaps for the grounded answer or Eastman inquiry flow.
 
 #### Tier 3 — semantic retrieval
 
@@ -951,7 +951,7 @@ This is a recommended future improvement; `answer.comparison` is not implemented
 - A system message, bounded server-owned product history, and the current user request plus retrieval-plan/evidence JSON.
 - The request-scoped `AbortSignal` so cancellation or socket closure stops the gateway request.
 
-The client expects `choices[0].message.content` and optional usage metadata. It does not currently request streaming, so the complete model response is emitted through one `answer.delta` event.
+The client supports both complete and streamed chat completions. Production orchestration emits model text incrementally through `answer.delta` events and captures final usage metadata when supplied.
 
 ### 14.2 Grounded request policy
 
@@ -961,7 +961,7 @@ The client expects `choices[0].message.content` and optional usage metadata. It 
 - The model may explain only the supplied products/evidence and must preserve names and FGMNs.
 - Conversation history is context, not factual authority; the current evidence bundle controls technical claims.
 - Product cards and official links are produced from server records, not model output.
-- Social/scope messages and no-evidence responses do not need a model call.
+- Deterministic social messages need no model call. No-evidence requests use a bounded model classification only when knowledge fallback is enabled; unrelated requests remain rejected.
 
 ### 14.3 Error, cancellation, and retry behavior
 
@@ -992,6 +992,12 @@ Before launch validation, document and verify Vercel AI Gateway and upstream-mod
 | `VERCEL_AI_GATEWAY_API_KEY`  | Secret         | Server-only Vercel AI Gateway credential   |
 | `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `zai/glm-5.3-flash`                |
 | `VERCEL_AI_GATEWAY_BASE_URL` | Nonsecret      | Gateway API base URL                       |
+| `EMBEDDING_ENABLED`          | Nonsecret      | Enables hybrid query embeddings            |
+| `EMBEDDING_API_KEY`          | Secret         | Primary server-only OpenRouter credential  |
+| `EMBEDDING_BACKUP_API_KEY`   | Secret         | Optional separate OpenRouter failover key  |
+| `EMBEDDING_MODEL`            | Nonsecret      | `google/gemini-embedding-2`                 |
+| `EMBEDDING_BASE_URL`         | Nonsecret      | OpenRouter embeddings endpoint             |
+| `EMBEDDING_DIMENSIONS`       | Nonsecret      | Must match the active artifact (`768`)     |
 | `EASTMAN_PRODUCT_FINDER_URL` | Nonsecret      | Verified component endpoint                |
 | `CORPUS_ARTIFACT_DIR`        | Nonsecret      | Path containing the active release pointer |
 | `CORPUS_WARN_AGE_HOURS`      | Nonsecret      | Freshness warning threshold                |
@@ -1534,26 +1540,34 @@ remains in Phase D, and ingestion/artifact schemas remain in Phase B.
 
 Minimal Phase C implementation started on 2026-08-30. Exact and lexical retrieval,
 generic in-memory vector search, RRF, region recognition, source building, and a
-real-corpus benchmark are implemented. The semantic path can now generate a separate
-versioned `embeddings.jsonl` artifact during ingestion, validate and load it into the
-in-memory index, and embed non-exact queries for hybrid RRF retrieval. It is feature
-gated and falls back to lexical retrieval if query embedding fails. The active corpus
-remains lexical until a production embedding model is selected, benchmarked, and used
-to publish a new release. Region filtering remains clarification-only until facet
-memberships are complete. The MVP generation provider is Vercel AI Gateway with
-`zai/glm-5.3-flash`; chat orchestration is implemented in Phase D.
+real-corpus benchmark are implemented. The semantic path generates a separate
+versioned `embeddings.jsonl` artifact during ingestion, validates and loads it into the
+in-memory index, and embeds non-exact queries for hybrid RRF retrieval. It is feature
+gated and falls back to lexical retrieval if both embedding credentials fail. The active
+release contains a complete 979-vector Gemini artifact at 768 dimensions. Region filtering
+remains clarification-only until facet memberships are complete. The MVP generation
+provider is Vercel AI Gateway with `zai/glm-5.3-flash`; chat orchestration is implemented
+in Phase D.
 
 On 2026-09-02, broad recommendations gained deterministic requirement-aware
 reranking and product-family diversification. The reported transparent BPA-free
 plastic-bottle query now returns actual clear bottle/container copolyesters and
 excludes Benzoflex 9-88, AQ 38S, and DuraStar MN610. Exact product questions still
-bypass recommendation reranking. The active-corpus benchmark now covers four cases.
+bypass recommendation reranking. The active-corpus benchmark now covers five cases.
 
 Also on 2026-09-02, the embedding client, optional batched ingestion, release metadata,
 content-hash validation, startup vector loading, exact-query bypass, query-time semantic
 retrieval, and lexical fail-open behavior were implemented. Set `EMBEDDING_ENABLED=true`
 with a supported `EMBEDDING_MODEL` only when creating and serving the same embedded
 release; model and dimensions are checked before hybrid retrieval is activated.
+
+On 2026-09-03, an independent active-artifact audit verified the source SHA-256,
+979 unique products, 979 unique chunks, 979 matching vectors, FGMN/content-hash linkage,
+768 finite nonzero values per vector, and successful loading of all entries. The vector
+artifact is complete; the corpus remains `partial` only for missing facet memberships
+and captured canonical links. A separate optional OpenRouter backup key now handles
+eligible primary-key, network, timeout, quota, and provider failures without failing over
+on cancellation, invalid vectors, or model/configuration errors.
 
 ### Phase D — backend/chat
 
@@ -1566,8 +1580,9 @@ release; model and dimensions are checked before hybrid retrieval is activated.
 Minimal Phase D implementation started on 2026-08-30 using Vercel AI Gateway.
 The HTTP/auth foundation, authenticated
 WebSocket lifecycle, retrieval-first evidence prompt, cancellation, heartbeat,
-request limits, and deterministic product/source events are implemented. Streaming,
-provider-retention validation, observability, and deterministic comparisons remain.
+request limits, streaming answer deltas, and deterministic product/source events are
+implemented. Provider-retention validation, observability, and deterministic comparisons
+remain.
 
 - Redacted operational logging and health endpoints.
 

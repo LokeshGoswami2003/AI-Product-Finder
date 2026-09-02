@@ -76,7 +76,8 @@ To activate a newly generated vector release safely:
 
 1. Select and benchmark an embedding model supported by the configured OpenAI-compatible
    `/embeddings` endpoint.
-2. Configure `EMBEDDING_API_KEY` with an OpenRouter key,
+2. Configure `EMBEDDING_API_KEY` with the primary OpenRouter key and optionally
+  `EMBEDDING_BACKUP_API_KEY` with a separate OpenRouter key,
    `EMBEDDING_BASE_URL=https://openrouter.ai/api/v1`,
    `EMBEDDING_MODEL=google/gemini-embedding-2`, and `EMBEDDING_DIMENSIONS=768`
    for both corpus ingestion and backend runtime. The reduced Matryoshka dimension
@@ -89,10 +90,18 @@ To activate a newly generated vector release safely:
    exception when it is no longer needed for deployment.
 6. Add the embedding settings to the production SSM environment and enable the flag.
 
-If the active release has no embeddings, the backend remains lexical. If a query-time
-embedding request fails, retrieval falls back to lexical results. A configured model or
-dimension mismatch with an embedded release is rejected during server creation rather
-than mixing incompatible vector spaces.
+The active release `20260902T172534143Z-7daaf5c5` was independently audited on
+2026-09-03: all 979 products have one matching chunk and one finite, nonzero,
+768-dimensional vector; source hash, chunk ID, FGMN, content hash, counts, and runtime
+loading all matched. Its vector artifact is complete. The overall corpus remains marked
+`partial` only because facet memberships and captured canonical links are unfinished.
+
+At query time, retryable network/timeout/provider failures, HTTP 401/403, 429, and 5xx
+responses from the primary embedding key are attempted once with the backup key. Invalid
+vector dimensions/content and model/configuration errors do not trigger key switching.
+Caller cancellation never triggers failover. If both keys fail, retrieval falls back to
+lexical results. A configured model or dimension mismatch with an embedded release is
+rejected during server creation rather than mixing incompatible vector spaces.
 
 Create the parameter with the AWS-managed SSM encryption key. If a
 customer-managed KMS key is selected instead, grant the instance role

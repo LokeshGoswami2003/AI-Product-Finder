@@ -73,3 +73,76 @@ test("embedding client validates dimensions and classifies provider errors", asy
       error.retryable === true,
   );
 });
+
+test("embedding client fails over once and keeps using the backup for later batches", async () => {
+  const authorizationHeaders = [];
+  const client = new EmbeddingClient({
+    apiKey: "primary-embedding-key",
+    backupApiKey: "backup-embedding-key",
+    model: "provider/embedding-model",
+    batchSize: 1,
+    expectedDimensions: 2,
+    fetchImpl: async (_url, options) => {
+      authorizationHeaders.push(options.headers.Authorization);
+      if (options.headers.Authorization === "Bearer primary-embedding-key") {
+        return response(429, { error: { message: "Rate limited" } });
+      }
+      return response(200, {
+        data: [{ index: 0, embedding: [1, 0] }],
+      });
+    },
+  });
+
+  assert.deepEqual(await client.embedBatch(["one", "two"]), [
+    [1, 0],
+    [1, 0],
+  ]);
+  assert.deepEqual(authorizationHeaders, [
+    "Bearer primary-embedding-key",
+    "Bearer backup-embedding-key",
+    "Bearer backup-embedding-key",
+  ]);
+});
+
+test("embedding client does not hide invalid vectors by switching keys", async () => {
+  const authorizationHeaders = [];
+  const client = new EmbeddingClient({
+    apiKey: "primary-embedding-key",
+    backupApiKey: "backup-embedding-key",
+    model: "provider/embedding-model",
+    expectedDimensions: 3,
+    fetchImpl: async (_url, options) => {
+      authorizationHeaders.push(options.headers.Authorization);
+      return response(200, {
+        data: [{ index: 0, embedding: [1, 0] }],
+      });
+    },
+  });
+
+  await assert.rejects(client.embed("query"), /exactly 3 dimensions/);
+  assert.deepEqual(authorizationHeaders, ["Bearer primary-embedding-key"]);
+});
+
+test("embedding client does not fail over after caller cancellation", async () => {
+  let requests = 0;
+  const controller = new AbortController();
+  controller.abort();
+  const client = new EmbeddingClient({
+    apiKey: "primary-embedding-key",
+    backupApiKey: "backup-embedding-key",
+    model: "provider/embedding-model",
+    fetchImpl: async () => {
+      requests += 1;
+      throw new DOMException("Aborted", "AbortError");
+    },
+  });
+
+  await assert.rejects(
+    client.embed("query", { signal: controller.signal }),
+    (error) =>
+      error instanceof EmbeddingClientError &&
+      error.code === "aborted" &&
+      error.retryable === false,
+  );
+  assert.equal(requests, 1);
+});

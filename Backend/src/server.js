@@ -74,7 +74,8 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
         );
       }
       embeddingClient = new EmbeddingClient({
-        apiKey: config.EMBEDDING_API_KEY || config.VERCEL_AI_GATEWAY_API_KEY,
+        apiKey: config.EMBEDDING_API_KEY,
+        backupApiKey: config.EMBEDDING_BACKUP_API_KEY,
         model: config.EMBEDDING_MODEL,
         baseUrl: config.EMBEDDING_BASE_URL,
         batchSize: config.EMBEDDING_BATCH_SIZE,

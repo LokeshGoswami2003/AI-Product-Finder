@@ -168,6 +168,35 @@ test("retriever falls back to lexical results when query embedding fails", async
   assert.equal(result.results[0].product.fgmn, "201");
 });
 
+test("retriever propagates cancellation instead of starting lexical work", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  const retriever = new ProductRetriever({
+    products,
+    memberships: { complete: false, facetToProducts: {} },
+    vectorSearch: new VectorSearch(
+      [
+        { fgmn: "100", chunkId: "a", vector: [1, 0] },
+        { fgmn: "201", chunkId: "b", vector: [0, 1] },
+      ],
+      2,
+    ),
+    embeddingClient: {
+      embed: async (_query, options) => {
+        assert.equal(options.signal, controller.signal);
+        throw new Error("cancelled");
+      },
+    },
+  });
+
+  await assert.rejects(
+    retriever.retrieve("adhesive additive", {
+      signal: controller.signal,
+    }),
+    /cancelled/,
+  );
+});
+
 test("retriever rejects weak lexical and semantic matches", async () => {
   const retriever = new ProductRetriever({
     products,

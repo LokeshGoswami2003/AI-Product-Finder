@@ -70,7 +70,10 @@ class ProductRetriever {
     this.embeddingClient = embeddingClient;
   }
 
-  async retrieve(query, { queryVector, limit = 5, context = {} } = {}) {
+  async retrieve(
+    query,
+    { queryVector, limit = 5, context = {}, signal } = {},
+  ) {
     const exact =
       this.exactResolver.resolve(query) ||
       this.exactResolver.resolveInText(query);
@@ -151,8 +154,10 @@ class ProductRetriever {
       try {
         effectiveQueryVector = await this.embeddingClient.embed(
           formatQueryForEmbedding(searchQuery),
+          { signal },
         );
       } catch (error) {
+        if (signal?.aborted) throw error;
         process.stderr.write(
           `Query embedding unavailable; using lexical retrieval: ${error.message}\n`,
         );

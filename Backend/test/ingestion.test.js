@@ -6,6 +6,7 @@ const test = require("node:test");
 
 const { buildCatalogRelease } = require("../src/corpus/artifacts");
 const { catalogSchema } = require("../src/corpus/catalog-schema");
+const { EmbeddingClient } = require("../src/embeddings/client");
 const { loadActiveRelease } = require("../src/corpus/load-release");
 const {
   fallbackSlug,
@@ -100,4 +101,55 @@ test("ingestion creates a validated vector index when embeddings are enabled", a
     release.vectorSearch.search([1, 0])[0].fgmn,
     release.products[0].fgmn,
   );
+});
+
+test("ingestion completes vector artifacts through the backup embedding key", async (context) => {
+  const artifactDir = await mkdtemp(
+    path.join(os.tmpdir(), "product-finder-backup-vectors-"),
+  );
+  context.after(() => rm(artifactDir, { recursive: true, force: true }));
+  const authorizationHeaders = [];
+  const embeddingClient = new EmbeddingClient({
+    apiKey: "primary-embedding-key",
+    backupApiKey: "backup-embedding-key",
+    model: "provider/embedding-model",
+    expectedDimensions: 2,
+    fetchImpl: async (_url, options) => {
+      authorizationHeaders.push(options.headers.Authorization);
+      if (options.headers.Authorization === "Bearer primary-embedding-key") {
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { message: "Invalid primary key" } }),
+        };
+      }
+      const input = JSON.parse(options.body).input;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: input.map((_text, index) => ({
+            index,
+            embedding: [0.8, 0.2],
+          })),
+        }),
+      };
+    },
+  });
+
+  const result = await buildCatalogRelease({
+    sourcePath: fixturePath,
+    artifactDir,
+    now: new Date("2026-08-30T00:00:00.000Z"),
+    expectedProductCount: 1,
+    embeddingClient,
+  });
+  const release = await loadActiveRelease(artifactDir);
+
+  assert.equal(result.report.embeddingStatus, "complete");
+  assert.equal(release.vectorSearch.entries.length, 1);
+  assert.deepEqual(authorizationHeaders, [
+    "Bearer primary-embedding-key",
+    "Bearer backup-embedding-key",
+  ]);
 });

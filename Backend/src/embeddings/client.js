@@ -26,6 +26,7 @@ function validateEmbedding(vector, expectedDimensions, name) {
 class EmbeddingClient {
   constructor({
     apiKey,
+    backupApiKey,
     model,
     baseUrl = "https://ai-gateway.vercel.sh/v1",
     batchSize = 64,
@@ -43,7 +44,14 @@ class EmbeddingClient {
       throw new TypeError("Embedding batch size must be a positive integer");
     }
 
-    this.apiKey = apiKey;
+    this.apiKeys = [apiKey.trim()];
+    if (
+      typeof backupApiKey === "string" &&
+      backupApiKey.trim() !== "" &&
+      backupApiKey.trim() !== this.apiKeys[0]
+    ) {
+      this.apiKeys.push(backupApiKey.trim());
+    }
     this.model = model;
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.batchSize = batchSize;
@@ -67,14 +75,46 @@ class EmbeddingClient {
     }
 
     const embeddings = [];
+    let keyIndex = 0;
     for (let offset = 0; offset < texts.length; offset += this.batchSize) {
       const batch = texts.slice(offset, offset + this.batchSize);
-      embeddings.push(...(await this.#requestBatch(batch, signal)));
+      const result = await this.#requestBatch(batch, signal, keyIndex);
+      embeddings.push(...result.embeddings);
+      keyIndex = result.keyIndex;
     }
     return embeddings;
   }
 
-  async #requestBatch(input, signal) {
+  async #requestBatch(input, signal, startingKeyIndex) {
+    let lastError;
+    for (
+      let keyIndex = startingKeyIndex;
+      keyIndex < this.apiKeys.length;
+      keyIndex += 1
+    ) {
+      try {
+        return {
+          embeddings: await this.#requestBatchWithKey(
+            input,
+            signal,
+            this.apiKeys[keyIndex],
+          ),
+          keyIndex,
+        };
+      } catch (error) {
+        lastError = error;
+        const canUseBackup =
+          keyIndex + 1 < this.apiKeys.length &&
+          !signal?.aborted &&
+          error instanceof EmbeddingClientError &&
+          (error.retryable || error.status === 401 || error.status === 403);
+        if (!canUseBackup) throw error;
+      }
+    }
+    throw lastError;
+  }
+
+  async #requestBatchWithKey(input, signal, apiKey) {
     const timeoutController = new AbortController();
     const timeout = setTimeout(() => timeoutController.abort(), this.timeoutMs);
     const requestSignal = signal
@@ -85,7 +125,7 @@ class EmbeddingClient {
       const response = await this.fetchImpl(`${this.baseUrl}/embeddings`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -136,7 +176,15 @@ class EmbeddingClient {
           retryable: true,
         });
       }
-      throw error;
+      if (signal?.aborted) {
+        throw new EmbeddingClientError("Embedding request cancelled", {
+          code: "aborted",
+          retryable: false,
+        });
+      }
+      throw new EmbeddingClientError("Embedding request failed", {
+        retryable: true,
+      });
     } finally {
       clearTimeout(timeout);
     }

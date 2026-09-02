@@ -73,11 +73,13 @@ Completed:
 - Connected embedded releases to the validated in-memory vector index.
 - Added query embedding for non-exact searches, hybrid RRF fusion, strict
   release/model/dimension validation, and lexical fallback on provider failure.
+- Verified the active vector artifact is complete across all 979 products/chunks,
+  with valid 768-dimensional Gemini vectors and matching source/content hashes.
+- Added an optional separate OpenRouter backup key for eligible query-time and
+  ingestion failures; cancellation and invalid vector data never trigger failover.
 
 Pending:
 
-- Select and benchmark the production embedding model, build an embedded release,
-  and enable the feature flag after evaluation.
 - Populate facet memberships before enabling region and other metadata hard filters.
 - Expand the benchmark with product families, applications, grades, and negative cases.
 - Calibrate retrieval limits, RRF constants, and confidence policy from evaluation results.
