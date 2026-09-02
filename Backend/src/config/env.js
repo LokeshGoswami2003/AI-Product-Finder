@@ -26,11 +26,15 @@ const envSchema = z
     AUTH_TTL_SECONDS: positiveInteger(3600),
     AI_PROVIDER: z.literal("vercel").default("vercel"),
     VERCEL_AI_GATEWAY_API_KEY: z.string().min(20).optional(),
-    VERCEL_AI_GATEWAY_MODEL: z.string().min(1).default("zai/glm-5.3-flash"),
+    VERCEL_AI_GATEWAY_MODEL: z.string().min(1).default("spacexai/grok-4.6"),
     VERCEL_AI_GATEWAY_BASE_URL: z
       .string()
       .url()
       .default("https://ai-gateway.vercel.sh/v1"),
+    KNOWLEDGE_FALLBACK_ENABLED: booleanFromEnvironment.default(true),
+    WEB_SEARCH_ENABLED: booleanFromEnvironment.default(true),
+    WEB_SEARCH_MAX_RESULTS: z.coerce.number().int().min(1).max(10).default(5),
+    WEB_SEARCH_TIMEOUT_MS: positiveInteger(15000),
     EMBEDDING_ENABLED: booleanFromEnvironment.default(false),
     EMBEDDING_API_KEY: z.string().min(20).optional(),
     EMBEDDING_MODEL: z.string().min(1).default("google/gemini-embedding-2"),

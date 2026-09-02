@@ -38,6 +38,37 @@ const REQUIREMENT_DEFINITIONS = [
     },
   },
   {
+    id: "adhesive-application",
+    label: "adhesive or bonding application",
+    kind: "application",
+    weight: 6,
+    queryPattern:
+      /\b(?:adhesives?|glues?|bonding|hot[- ]?melts?|pressure[- ]sensitive adhesives?|sealants?|tackifiers?)\b/i,
+    productPattern:
+      /\b(?:adhesives?|glues?|bonding|hot[- ]?melts?|pressure[- ]sensitive adhesives?|sealants?|tackifiers?)\b/i,
+    productStrength(product) {
+      const identity = `${product.displayName || ""} ${product.sortName || ""}`;
+      const description = product.description || "";
+      if (
+        /\b(?:adhesives?|glues?|sealants?|tackifiers?)\b/i.test(identity) &&
+        !/\bfilms?\b/i.test(identity)
+      ) {
+        return 1;
+      }
+      if (
+        /\b(?:adhesive|bonding) (?:applications?|formulations?|systems?)\b/i.test(
+          description,
+        ) ||
+        /\b(?:for use in|used in|uses? include|formulat(?:ed|ing|ion)|designed(?: especially)? for).{0,80}\b(?:adhesives?|bonding|hot[- ]?melts?|sealants?)\b/i.test(
+          description,
+        )
+      ) {
+        return 0.85;
+      }
+      return 0;
+    },
+  },
+  {
     id: "transparent",
     label: "transparency or optical clarity",
     kind: "property",

@@ -71,7 +71,7 @@ test("chat orchestration retrieves before generation and bounds model evidence",
   assert.match(request.messages.at(-1).content, /Density: 1\.04 g\/cm3/);
   assert.match(
     request.messages[0].content,
-    /only from the supplied catalog information/i,
+    /catalog, TDS, and SDS evidence is authoritative/i,
   );
   assert.match(
     request.messages[0].content,
@@ -122,7 +122,7 @@ test("chat orchestration uses retrieval evidence to reject unrelated topics", as
     assert.deepEqual(answer.retrieval.results, []);
     assert.match(
       answer.text,
-      /doesn’t appear to match the Eastman product catalog/i,
+      /focused on Eastman products and related material/i,
     );
   }
 
@@ -195,6 +195,85 @@ test("chat orchestration sends server context to retrieval and the model", async
 
   assert.deepEqual(receivedContext, retrievalContext);
   assert.deepEqual(modelMessages.slice(1, 3), history);
+});
+
+test("chat orchestration gives the model explicit partial-fit context", async () => {
+  let modelMessages;
+  const partialRetrieval = {
+    outcome: "recommendation",
+    requirements: [
+      {
+        id: "adhesive-application",
+        kind: "application",
+        label: "adhesive or bonding application",
+      },
+      {
+        id: "transparent",
+        kind: "property",
+        label: "transparency or optical clarity",
+      },
+    ],
+    results: [
+      {
+        product: {
+          ...product,
+          displayName: "Adhesive formulation resin",
+          description: "A resin for hot melt adhesive applications.",
+        },
+        sources: [{ id: "product:71103853", url: product.links.detail }],
+        matchedRequirements: [
+          {
+            id: "adhesive-application",
+            kind: "application",
+            label: "adhesive or bonding application",
+          },
+        ],
+        unverifiedRequirements: [
+          {
+            id: "transparent",
+            kind: "property",
+            label: "transparency or optical clarity",
+          },
+        ],
+      },
+    ],
+  };
+  const orchestrator = new ChatOrchestrator({
+    retriever: { retrieve: async () => partialRetrieval },
+    documentClient: { enrichProduct: async () => [] },
+    modelClient: {
+      createChatCompletion: async ({ messages }) => {
+        modelMessages = messages;
+        return {
+          choices: [
+            {
+              message: {
+                content:
+                  "Eastman offers a formulation resin to evaluate; transparency still needs validation.",
+              },
+            },
+          ],
+        };
+      },
+    },
+  });
+
+  await orchestrator.answer({
+    message: "Give me options for a transparent adhesive",
+  });
+
+  assert.match(
+    modelMessages[0].content,
+    /constructive formulation or product-development paths/i,
+  );
+  assert.match(
+    modelMessages.at(-1).content,
+    /"supportedRequirements":\[\{"id":"adhesive-application"/,
+  );
+  assert.match(
+    modelMessages.at(-1).content,
+    /"unverifiedRequirements":\[\{"id":"transparent"/,
+  );
 });
 
 test("retrieval planning adds SDS only for safety intent and bounds comparisons", () => {

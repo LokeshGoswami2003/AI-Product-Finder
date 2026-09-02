@@ -15,6 +15,7 @@ const {
   EastmanDocumentClient,
 } = require("./documents/eastman-document-client");
 const { ProductRetriever } = require("./retrieval/retriever");
+const { PublicWebResearchClient } = require("./research/public-web");
 const { VercelAIGatewayClient } = require("./vercel-ai-gateway/client");
 const { attachChatWebSocket } = require("./websocket/chat-server");
 
@@ -93,10 +94,19 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
       timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,
       cacheTtlMs: config.DOCUMENT_CACHE_TTL_SECONDS * 1000,
     });
+    const researchClient = config.WEB_SEARCH_ENABLED
+      ? new PublicWebResearchClient({
+          modelClient: client,
+          maxResults: config.WEB_SEARCH_MAX_RESULTS,
+          timeoutMs: config.WEB_SEARCH_TIMEOUT_MS,
+        })
+      : null;
     const orchestrator = new ChatOrchestrator({
       retriever,
       documentClient,
       modelClient: client,
+      researchClient,
+      knowledgeFallbackEnabled: config.KNOWLEDGE_FALLBACK_ENABLED,
     });
     attachChatWebSocket({
       server,

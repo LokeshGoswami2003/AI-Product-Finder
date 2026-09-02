@@ -14,6 +14,17 @@ const BENCHMARKS = [
     expectedFgmn: "71119050",
     excludedFgmns: ["71071434", "71001871", "71049144"],
   },
+  {
+    query: "can you please give some options for transparent adhesive",
+    expectedAnyFgmns: [
+      "71071555",
+      "71124905",
+      "71124886",
+      "71128240",
+      "71096258",
+    ],
+    excludedFgmns: ["71004286", "71057589", "71100690", "71125927"],
+  },
 ];
 
 async function main() {
@@ -45,15 +56,18 @@ async function main() {
   for (const benchmark of BENCHMARKS) {
     const result = await retriever.retrieve(benchmark.query, { limit: 5 });
     const identifiers = result.results.map((entry) => entry.product.fgmn);
+    const expectedFgmns = benchmark.expectedAnyFgmns || [
+      benchmark.expectedFgmn,
+    ];
     if (
-      !identifiers.includes(benchmark.expectedFgmn) ||
+      !expectedFgmns.some((fgmn) => identifiers.includes(fgmn)) ||
       benchmark.excludedFgmns?.some((fgmn) => identifiers.includes(fgmn)) ||
       (benchmark.expectedOutcome &&
         result.outcome !== benchmark.expectedOutcome)
     ) {
       failures.push({
         query: benchmark.query,
-        expectedFgmn: benchmark.expectedFgmn,
+        expectedFgmns,
         actualFgmn: identifiers,
         expectedOutcome: benchmark.expectedOutcome,
         actualOutcome: result.outcome,

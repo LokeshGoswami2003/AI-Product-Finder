@@ -11,7 +11,7 @@ class VercelAIGatewayError extends Error {
 class VercelAIGatewayClient {
   constructor({
     apiKey,
-    model = "zai/glm-5.3-flash",
+    model = "spacexai/grok-4.6",
     baseUrl = "https://ai-gateway.vercel.sh/v1",
     fetchImpl = fetch,
   }) {
@@ -25,7 +25,14 @@ class VercelAIGatewayClient {
     this.fetchImpl = fetchImpl;
   }
 
-  async createChatCompletion({ messages, signal, responseFormat }) {
+  async createChatCompletion({
+    messages,
+    signal,
+    responseFormat,
+    tools,
+    toolChoice,
+    maxTokens,
+  }) {
     const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -36,6 +43,9 @@ class VercelAIGatewayClient {
         model: this.model,
         messages,
         ...(responseFormat ? { response_format: responseFormat } : {}),
+        ...(tools ? { tools } : {}),
+        ...(toolChoice ? { tool_choice: toolChoice } : {}),
+        ...(maxTokens ? { max_tokens: maxTokens } : {}),
       }),
       signal,
     });
@@ -60,6 +70,9 @@ class VercelAIGatewayClient {
     messages,
     signal,
     responseFormat,
+    tools,
+    toolChoice,
+    maxTokens,
     onDelta = () => {},
   }) {
     const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
@@ -74,6 +87,9 @@ class VercelAIGatewayClient {
         stream: true,
         stream_options: { include_usage: true },
         ...(responseFormat ? { response_format: responseFormat } : {}),
+        ...(tools ? { tools } : {}),
+        ...(toolChoice ? { tool_choice: toolChoice } : {}),
+        ...(maxTokens ? { max_tokens: maxTokens } : {}),
       }),
       signal,
     });

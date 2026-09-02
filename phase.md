@@ -1,6 +1,6 @@
 # AI Product Finder implementation status
 
-Updated: 2026-09-02
+Updated: 2026-09-03
 
 ## Phase 1 / Phase A - Foundation
 
@@ -67,7 +67,7 @@ Completed:
   recommendation, clarification, and no evidence.
 - Added active-release loading and real-corpus retrieval regression benchmarks.
 - Replaced OpenRouter with Vercel AI Gateway and pinned the MVP to
-  `zai/glm-5.3-flash`.
+  `spacexai/grok-4.6`.
 - Added explicit Vercel AI Gateway errors and retryability metadata.
 - Added the local `sampel.env` secret file to Git ignore rules.
 - Connected embedded releases to the validated in-memory vector index.

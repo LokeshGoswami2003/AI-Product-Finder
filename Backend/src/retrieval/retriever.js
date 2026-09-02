@@ -140,6 +140,12 @@ class ProductRetriever {
       ),
       lexical,
     );
+    const requirementFitByFgmn = new Map(
+      requirementRanking.results.map((result) => [
+        result.fgmn,
+        new Set(result.matchedRequirements || []),
+      ]),
+    );
     let effectiveQueryVector = queryVector;
     if (!effectiveQueryVector && this.vectorSearch && this.embeddingClient) {
       try {
@@ -199,7 +205,19 @@ class ProductRetriever {
 
     const results = fused.slice(0, limit).map((result) => {
       const product = this.products.get(result.fgmn);
-      return { product, sources: [sourceFor(product)] };
+      const matchedRequirementIds = requirementFitByFgmn.get(result.fgmn);
+      const matchedRequirements = requirementRanking.requirements.filter(
+        (requirement) => matchedRequirementIds?.has(requirement.id),
+      );
+      const unverifiedRequirements = requirementRanking.requirements.filter(
+        (requirement) => !matchedRequirementIds?.has(requirement.id),
+      );
+      return {
+        product,
+        sources: [sourceFor(product)],
+        matchedRequirements,
+        unverifiedRequirements,
+      };
     });
 
     return {

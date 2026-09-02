@@ -45,8 +45,18 @@ function validateEventLimits(event, config) {
 
 function serializeResults(retrieval = { results: [] }) {
   const results = retrieval.results || [];
+  const sources = [
+    ...(retrieval.sources || []),
+    ...results.flatMap((result) => result.sources || []),
+  ].filter(
+    (source, index, values) =>
+      values.findIndex(
+        (candidate) =>
+          candidate.id === source.id || candidate.url === source.url,
+      ) === index,
+  );
   return {
-    sources: results.flatMap((result) => result.sources || []),
+    sources,
     products: results.map(({ product }) => ({
       fgmn: product.fgmn,
       displayName: product.displayName,

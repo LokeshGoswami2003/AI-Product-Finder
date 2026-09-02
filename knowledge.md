@@ -3,7 +3,7 @@
 | Field         | Value                                                            |
 | ------------- | ---------------------------------------------------------------- |
 | Purpose       | Canonical technical and product-discovery knowledge for the MVP  |
-| Last verified | 2026-09-02                                                       |
+| Last verified | 2026-09-03                                                       |
 | Current phase | Core implementation and minimal production deployment complete   |
 | Target stack  | React, Express, native WebSockets, Vercel AI Gateway, EC2, Nginx |
 | Data policy   | No database and no persistent user/chat retention                |
@@ -33,7 +33,7 @@ Eastman endpoint behavior documented here was reverse-engineered from public web
 ### Decisions
 
 - Build a standalone React + Express service using native WebSockets.
-- Use Vercel AI Gateway with `zai/glm-5.3-flash` for MVP generation.
+- Use Vercel AI Gateway with `spacexai/grok-4.6` for MVP generation.
 - Deploy one same-origin service on AWS EC2 behind Nginx.
 - Use one shared test access code, exchanged for a short-lived secure cookie.
 - Keep a bounded conversation transcript and recent validated product references in Express process memory, keyed by an anonymous signed-session nonce; never trust client-supplied history.
@@ -42,7 +42,7 @@ Eastman endpoint behavior documented here was reverse-engineered from public web
 
 ### Recommended solution
 
-Load the versioned local product corpus into Express memory. For each substantive chat request, use exact and lexical/fuzzy retrieval, deterministic requirement-aware reranking, product-family diversification, and validated recent-product context. Enrich no more than three products with query-relevant live Eastman TDS/SDS evidence, and send only that bounded evidence and server-owned history to `zai/glm-5.3-flash` through Vercel AI Gateway. The model does not receive the full `productfinder.json`. Return explanatory text separately from deterministic product cards and official source links. Semantic embeddings, complete facet memberships, token streaming, and deterministic comparison tables remain future improvements.
+Load the versioned local product corpus into Express memory. For each substantive chat request, use exact and lexical/fuzzy retrieval, deterministic requirement-aware reranking, product-family diversification, and validated recent-product context. Enrich no more than three products with query-relevant live Eastman TDS/SDS evidence, and send only that bounded evidence and server-owned history to `spacexai/grok-4.6` through Vercel AI Gateway. The model does not receive the full `productfinder.json`. Return explanatory text separately from deterministic product cards and official source links. Semantic embeddings, complete facet memberships, token streaming, and deterministic comparison tables remain future improvements.
 
 ## 2. MVP goals and boundaries
 
@@ -497,7 +497,7 @@ Refreshing or reconnecting restores the bounded transcript while the signed sess
 
 ### 9.2 Model-provider retention — open production verification
 
-The current runtime uses Vercel AI Gateway and the configured upstream `zai/glm-5.3-flash` model. Gateway and upstream-provider retention, training, regional processing, and request-log settings have not yet been recorded as verified in this document. Production launch must validate those settings against the no-persistent-chat policy, disable request/response body logging and prompt caching where applicable, and repeat verification whenever the gateway, model, account, or routing configuration changes.
+The current runtime uses Vercel AI Gateway and the configured upstream `spacexai/grok-4.6` model. Gateway and upstream-provider retention, training, regional processing, and request-log settings have not yet been recorded as verified in this document. Production launch must validate those settings against the no-persistent-chat policy, disable request/response body logging and prompt caching where applicable, and repeat verification whenever the gateway, model, account, or routing configuration changes.
 
 ### 9.3 Application logging policy — decision
 
@@ -947,7 +947,7 @@ This is a recommended future improvement; `answer.comparison` is not implemented
 `Backend/src/vercel-ai-gateway/client.js` uses `fetch` to call the OpenAI-compatible `/chat/completions` endpoint with:
 
 - Bearer authentication from `VERCEL_AI_GATEWAY_API_KEY`.
-- The model configured by `VERCEL_AI_GATEWAY_MODEL`, defaulting to `zai/glm-5.3-flash`.
+- The model configured by `VERCEL_AI_GATEWAY_MODEL`, defaulting to `spacexai/grok-4.6`.
 - A system message, bounded server-owned product history, and the current user request plus retrieval-plan/evidence JSON.
 - The request-scoped `AbortSignal` so cancellation or socket closure stops the gateway request.
 
@@ -990,7 +990,7 @@ Before launch validation, document and verify Vercel AI Gateway and upstream-mod
 | `AUTH_TTL_SECONDS`           | Nonsecret      | Short auth-cookie lifetime                 |
 | `AI_PROVIDER`                | Nonsecret      | Fixed to `vercel` for the current MVP      |
 | `VERCEL_AI_GATEWAY_API_KEY`  | Secret         | Server-only Vercel AI Gateway credential   |
-| `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `zai/glm-5.3-flash`                |
+| `VERCEL_AI_GATEWAY_MODEL`    | Nonsecret      | Default `spacexai/grok-4.6`                |
 | `VERCEL_AI_GATEWAY_BASE_URL` | Nonsecret      | Gateway API base URL                       |
 | `EASTMAN_PRODUCT_FINDER_URL` | Nonsecret      | Verified component endpoint                |
 | `CORPUS_ARTIFACT_DIR`        | Nonsecret      | Path containing the active release pointer |
@@ -1541,7 +1541,7 @@ gated and falls back to lexical retrieval if query embedding fails. The active c
 remains lexical until a production embedding model is selected, benchmarked, and used
 to publish a new release. Region filtering remains clarification-only until facet
 memberships are complete. The MVP generation provider is Vercel AI Gateway with
-`zai/glm-5.3-flash`; chat orchestration is implemented in Phase D.
+`spacexai/grok-4.6`; chat orchestration is implemented in Phase D.
 
 On 2026-09-02, broad recommendations gained deterministic requirement-aware
 reranking and product-family diversification. The reported transparent BPA-free
@@ -1728,6 +1728,11 @@ Resolve these before production deployment:
 - Added deterministic polymer/container/transparency/BPA requirement scoring, direct-application gating, and near-duplicate product-family diversification before generation.
 - Added an exact-query unit regression and active-corpus benchmark case; the resulting shortlist starts with Eastman Cristal One, Eastman Cristal EB062 copolyester, and Eastar MB002 copolyester while excluding the three reported false positives.
 - Verified 42 backend tests, the 4/4 active-corpus retrieval benchmark, 5 frontend tests, frontend lint/build, editor diagnostics, and Git diff integrity.
+
+### 2026-09-03
+
+- Switched the configured generation model from `zai/glm-5.3-flash` to `spacexai/grok-4.6` after live Vercel AI Gateway probes verified standard completion, structured JSON output, and streamed output.
+- Observed a free-tier `429` during the optional server-side public-search probe; the guarded research client continues to fail open without blocking catalog-grounded generation.
 
 ### Maintenance rule
 

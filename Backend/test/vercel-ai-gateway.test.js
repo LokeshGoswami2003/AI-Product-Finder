@@ -15,7 +15,7 @@ function response(status, body) {
   };
 }
 
-test("Vercel AI Gateway client defaults to GLM 5.3 Flash", async () => {
+test("Vercel AI Gateway client defaults to Grok 4.6", async () => {
   let request;
   const client = new VercelAIGatewayClient({
     apiKey: "gateway-key",
@@ -32,7 +32,7 @@ test("Vercel AI Gateway client defaults to GLM 5.3 Flash", async () => {
 
   assert.equal(result.id, "completion");
   assert.equal(request.url, "https://ai-gateway.vercel.sh/v1/chat/completions");
-  assert.equal(payload.model, "zai/glm-5.3-flash");
+  assert.equal(payload.model, "spacexai/grok-4.6");
   assert.equal(request.options.headers.Authorization, "Bearer gateway-key");
 });
 
@@ -50,6 +50,37 @@ test("Vercel AI Gateway client marks rate limits as retryable", async () => {
       error.status === 429 &&
       error.retryable === true,
   );
+});
+
+test("Vercel AI Gateway client forwards structured tool options", async () => {
+  let request;
+  const client = new VercelAIGatewayClient({
+    apiKey: "gateway-key",
+    fetchImpl: async (_url, options) => {
+      request = options;
+      return response(200, { choices: [{ message: { content: "{}" } }] });
+    },
+  });
+  const tools = [
+    {
+      type: "vercel:perplexity_search",
+      config: { search_domain_filter: ["eastman.com"] },
+    },
+  ];
+
+  await client.createChatCompletion({
+    messages: [{ role: "user", content: "Research adhesives" }],
+    responseFormat: { type: "json_object" },
+    tools,
+    toolChoice: "required",
+    maxTokens: 500,
+  });
+  const payload = JSON.parse(request.body);
+
+  assert.deepEqual(payload.response_format, { type: "json_object" });
+  assert.deepEqual(payload.tools, tools);
+  assert.equal(payload.tool_choice, "required");
+  assert.equal(payload.max_tokens, 500);
 });
 
 test("Vercel AI Gateway client surfaces non-retryable request failures", async () => {

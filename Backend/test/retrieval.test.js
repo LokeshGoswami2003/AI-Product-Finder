@@ -324,3 +324,68 @@ test("retriever prioritizes transparent bottle polymers over generic polymer mat
   assert.equal(exact.outcome, "exact");
   assert.equal(exact.results[0].product.fgmn, "401");
 });
+
+test("retriever keeps adhesive application candidates and reports unverified properties", async () => {
+  const recommendationProducts = [
+    {
+      fgmn: "501",
+      displayName: "Clear molding resin",
+      description: "A transparent copolyester for clear molded parts.",
+    },
+    {
+      fgmn: "502",
+      displayName: "Adhesive performance additive",
+      description:
+        "A performance additive designed for demanding adhesive applications.",
+    },
+    {
+      fgmn: "503",
+      displayName: "Hot melt polyester resin",
+      description:
+        "A polyester resin for use in polyurethane hot melt adhesive formulations.",
+    },
+    {
+      fgmn: "504",
+      displayName: "Films with pressure-sensitive adhesive",
+      description:
+        "A transparent protective film with a pressure-sensitive mounting adhesive.",
+    },
+    {
+      fgmn: "505",
+      displayName: "Coating adhesion promoter",
+      description:
+        "A stir-in additive that promotes adhesion to polypropylene.",
+    },
+  ].map((product) => ({
+    ...product,
+    sortName: product.displayName,
+    searchText: `${product.displayName} ${product.description}`.toLowerCase(),
+    links: {
+      detail: `https://www.eastman.com/en/products/product-detail/${product.fgmn}/test-product`,
+    },
+  }));
+  const retriever = new ProductRetriever({
+    products: recommendationProducts,
+    memberships: { complete: false, facetToProducts: {} },
+  });
+
+  const result = await retriever.retrieve("options for transparent adhesive", {
+    limit: 5,
+  });
+
+  assert.equal(result.outcome, "recommendation");
+  assert.deepEqual(
+    new Set(result.results.map((entry) => entry.product.fgmn)),
+    new Set(["502", "503"]),
+  );
+  for (const entry of result.results) {
+    assert.deepEqual(
+      entry.matchedRequirements.map((requirement) => requirement.id),
+      ["adhesive-application"],
+    );
+    assert.deepEqual(
+      entry.unverifiedRequirements.map((requirement) => requirement.id),
+      ["transparent"],
+    );
+  }
+});
