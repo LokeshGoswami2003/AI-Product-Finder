@@ -1,15 +1,15 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Single-instance production infrastructure for AI Product Finder
 
 Parameters:
   ProjectName:
     Type: String
     Default: ai-product-finder
-    AllowedPattern: '[a-z0-9-]+'
+    AllowedPattern: "[a-z0-9-]+"
   EnvironmentName:
     Type: String
     Default: production
-    AllowedPattern: '[a-z0-9-]+'
+    AllowedPattern: "[a-z0-9-]+"
   DomainName:
     Type: String
     Default: samvad.space
@@ -37,13 +37,13 @@ Parameters:
     Default: /ai-product-finder/production/backend-env
   ExistingGitHubOidcProviderArn:
     Type: String
-    Default: ''
+    Default: ""
   LatestAmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
 
 Conditions:
-  CreateGitHubOidcProvider: !Equals [!Ref ExistingGitHubOidcProviderArn, '']
+  CreateGitHubOidcProvider: !Equals [!Ref ExistingGitHubOidcProviderArn, ""]
 
 Resources:
   GitHubOidcProvider:
@@ -65,7 +65,7 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
-      BucketName: !Sub '${ProjectName}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}'
+      BucketName: !Sub "${ProjectName}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}"
       LifecycleConfiguration:
         Rules:
           - Id: ExpireOldReleases
@@ -95,15 +95,15 @@ Resources:
     Properties:
       Bucket: !Ref DeploymentBucket
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: DenyInsecureTransport
             Effect: Deny
-            Principal: '*'
+            Principal: "*"
             Action: s3:*
             Resource:
               - !GetAtt DeploymentBucket.Arn
-              - !Sub '${DeploymentBucket.Arn}/*'
+              - !Sub "${DeploymentBucket.Arn}/*"
             Condition:
               Bool:
                 aws:SecureTransport: false
@@ -125,12 +125,12 @@ Resources:
           CidrIp: 0.0.0.0/0
           Description: HTTPS application traffic
       SecurityGroupEgress:
-        - IpProtocol: '-1'
+        - IpProtocol: "-1"
           CidrIp: 0.0.0.0/0
           Description: Package, AWS API, Bedrock endpoint, and Eastman source access
       Tags:
         - Key: Name
-          Value: !Sub '${ProjectName}-${EnvironmentName}'
+          Value: !Sub "${ProjectName}-${EnvironmentName}"
         - Key: Project
           Value: !Ref ProjectName
         - Key: Environment
@@ -139,9 +139,9 @@ Resources:
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-${EnvironmentName}-instance'
+      RoleName: !Sub "${ProjectName}-${EnvironmentName}-instance"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -153,13 +153,13 @@ Resources:
       Policies:
         - PolicyName: ReadDeploymentArtifactsAndEnvironment
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:GetObjectVersion
-                Resource: !Sub '${DeploymentBucket.Arn}/releases/*'
+                Resource: !Sub "${DeploymentBucket.Arn}/releases/*"
               - Effect: Allow
                 Action: s3:ListBucket
                 Resource: !GetAtt DeploymentBucket.Arn
@@ -170,7 +170,7 @@ Resources:
                 Action:
                   - ssm:GetParameter
                 Resource: !Sub
-                  - 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterName}'
+                  - "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterName}"
                   - ParameterName: !Ref BackendEnvironmentParameterName
       Tags:
         - Key: Project
@@ -181,7 +181,7 @@ Resources:
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: !Sub '${ProjectName}-${EnvironmentName}'
+      InstanceProfileName: !Sub "${ProjectName}-${EnvironmentName}"
       Roles:
         - !Ref InstanceRole
 
@@ -229,13 +229,13 @@ Resources:
           systemctl restart amazon-ssm-agent
       Tags:
         - Key: Name
-          Value: !Sub '${ProjectName}-${EnvironmentName}'
+          Value: !Sub "${ProjectName}-${EnvironmentName}"
         - Key: Project
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref EnvironmentName
         - Key: DeploymentGroup
-          Value: !Sub '${ProjectName}-${EnvironmentName}'
+          Value: !Sub "${ProjectName}-${EnvironmentName}"
 
   ElasticIp:
     Type: AWS::EC2::EIP
@@ -243,7 +243,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${ProjectName}-${EnvironmentName}'
+          Value: !Sub "${ProjectName}-${EnvironmentName}"
         - Key: Project
           Value: !Ref ProjectName
 
@@ -256,13 +256,13 @@ Resources:
   ApplicationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/${ProjectName}/${EnvironmentName}/application'
+      LogGroupName: !Sub "/${ProjectName}/${EnvironmentName}/application"
       RetentionInDays: 14
 
   NginxLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/${ProjectName}/${EnvironmentName}/nginx'
+      LogGroupName: !Sub "/${ProjectName}/${EnvironmentName}/nginx"
       RetentionInDays: 14
 
   InstanceStatusAlarm:
@@ -284,9 +284,9 @@ Resources:
   GitHubActionsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-${EnvironmentName}-github-actions'
+      RoleName: !Sub "${ProjectName}-${EnvironmentName}-github-actions"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -304,24 +304,24 @@ Resources:
       Policies:
         - PolicyName: DeployRelease
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:PutObject
                   - s3:GetObject
-                Resource: !Sub '${DeploymentBucket.Arn}/releases/*'
+                Resource: !Sub "${DeploymentBucket.Arn}/releases/*"
               - Effect: Allow
                 Action: ssm:SendCommand
                 Resource:
-                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript'
-                  - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Instance}'
+                  - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript"
+                  - !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Instance}"
               - Effect: Allow
                 Action:
                   - ssm:GetCommandInvocation
                   - ssm:ListCommandInvocations
                   - ssm:CancelCommand
-                Resource: '*'
+                Resource: "*"
       Tags:
         - Key: Project
           Value: !Ref ProjectName
@@ -342,4 +342,4 @@ Outputs:
   PublicIp:
     Value: !Ref ElasticIp
   SsmSessionCommand:
-    Value: !Sub 'aws ssm start-session --region ${AWS::Region} --target ${Instance}'
+    Value: !Sub "aws ssm start-session --region ${AWS::Region} --target ${Instance}"

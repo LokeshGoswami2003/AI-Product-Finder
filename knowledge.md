@@ -1,12 +1,12 @@
 # Eastman AI Product Finder MVP — Knowledge Base
 
-| Field         | Value                                                            |
-| ------------- | ---------------------------------------------------------------- |
-| Purpose       | Canonical technical and product-discovery knowledge for the MVP  |
-| Last verified | 2026-09-04                                                       |
-| Current phase | Core implementation and minimal production deployment complete   |
-| Target stack  | React, Express, native WebSockets, Amazon Bedrock, EC2, Nginx     |
-| Data policy   | No database and no persistent user/chat retention                |
+| Field         | Value                                                           |
+| ------------- | --------------------------------------------------------------- |
+| Purpose       | Canonical technical and product-discovery knowledge for the MVP |
+| Last verified | 2026-09-04                                                      |
+| Current phase | Core implementation and minimal production deployment complete  |
+| Target stack  | React, Express, native WebSockets, Amazon Bedrock, EC2, Nginx   |
+| Data policy   | No database and no persistent user/chat retention               |
 
 ## How to read this document
 
@@ -43,10 +43,10 @@ reconnect-restoration statement conflicts with this snapshot, treat it as supers
 - Use the Amazon Bedrock OpenAI-compatible endpoint with `deepseek.v3.2`.
 - Deploy one same-origin service on AWS EC2 behind Nginx.
 - Keep bounded conversation history and recent validated product references only in
-	Express memory for the lifetime of one WebSocket connection.
+  Express memory for the lifetime of one WebSocket connection.
 - Do not use a database or persist prompts, responses, histories, or query embeddings.
 - Keep the public demo unauthenticated for the current simplified release; enforce exact
-	WebSocket origin checks and restore authentication before broader production use.
+  WebSocket origin checks and restore authentication before broader production use.
 
 ### Recommended solution
 
@@ -91,28 +91,28 @@ memberships, and deterministic comparison tables are future improvements.
 
 - Uses Express `^5.2.1`, `ws`, Zod, Helmet, and Cheerio.
 - Exposes liveness/readiness routes and an exact-origin WebSocket endpoint; authentication
-	routes and signed cookies are not present in the simplified runtime.
+  routes and signed cookies are not present in the simplified runtime.
 - Loads the active immutable 979-product corpus into memory and creates a trimmed catalog
-	containing only FGMN, display name, and description.
+  containing only FGMN, display name, and description.
 - Calls Bedrock twice for each substantive answer: JSON product selection, then streamed
-	sales generation. Both calls currently include the full trimmed catalog.
+  sales generation. Both calls currently include the full trimmed catalog.
 - Validates every model-returned FGMN against an in-memory catalog map, removes duplicates,
-	and accepts at most three products. This guarantees catalog-valid identifiers but does
-	not make semantic ranking deterministic.
+  and accepts at most three products. This guarantees catalog-valid identifiers but does
+  not make semantic ranking deterministic.
 - Keeps bounded conversation context and recent FGMNs in process memory per WebSocket
-	connection. Reconnecting creates a new conversation and does not restore prior context.
+  connection. Reconnecting creates a new conversation and does not restore prior context.
 - Fetches and caches allowlisted Eastman TDS HTML for selected products. SDS is link-only.
 - Enforces one active request and 20 substantive product turns per connection, with
-	cancellation/error quota rollback.
+  cancellation/error quota rollback.
 - Provides Node tests and local catalog ingestion; vector/lexical retrieval and its
-	benchmark script were removed.
+  benchmark script were removed.
 
 ### Frontend — verified
 
 - React and React DOM are `^19.2.8`; Vite is `^8.2.2` and ESLint is `^10.9.0`.
 - The floating responsive chat widget uses a reducer and reconnecting WebSocket hook.
 - React keeps only the rendering cache. A new socket receives a new empty server snapshot;
-	reconnect does not restore the previous socket's server conversation.
+  reconnect does not restore the previous socket's server conversation.
 - The client sends only the current message, renders deterministic product cards and allowlisted official sources, and never automatically replays a generation.
 - The composer displays remaining guided questions and locks after the official Eastman inquiry handoff.
 - Frontend unit tests, lint, and production build scripts are implemented.
@@ -131,13 +131,13 @@ memberships, and deterministic comparison tables are future improvements.
 1. The browser sends only the current `chat.request` over `/ws/chat`.
 2. Deterministic social/scope handling can answer without Bedrock or quota use.
 3. For a product turn, Bedrock receives the bounded product history, recent FGMNs, and
-	all 979 trimmed catalog entries, then returns `{"fgmns":[...]}`.
+   all 979 trimmed catalog entries, then returns `{"fgmns":[...]}`.
 4. The server parses JSON (with a numeric fallback), rejects unknown/duplicate FGMNs,
-	and resolves accepted identifiers to server-owned product records.
+   and resolves accepted identifiers to server-owned product records.
 5. The server fetches query-relevant TDS HTML for selected products when listed. Failed
-	or missing TDS evidence is omitted from customer-facing evidence. SDS remains a link.
+   or missing TDS evidence is omitted from customer-facing evidence. SDS remains a link.
 6. A second Bedrock request receives history, the full trimmed catalog, and selected
-	product evidence, then streams the final sales answer.
+   product evidence, then streams the final sales answer.
 7. Product cards and links are assembled from server records, never model-created URLs.
 
 Known tradeoff: selection is catalog-safe but not fully deterministic because the model
@@ -1814,20 +1814,20 @@ Resolve these before production deployment:
 ### 2026-09-04
 
 - Simplified generation to the Amazon Bedrock OpenAI-compatible endpoint with
-	`deepseek.v3.2`; removed OpenRouter, Vercel, web-research, embedding, lexical/fuzzy,
-	rank-fusion, and provider-failover runtime paths.
+  `deepseek.v3.2`; removed OpenRouter, Vercel, web-research, embedding, lexical/fuzzy,
+  rank-fusion, and provider-failover runtime paths.
 - Replaced retrieval-first orchestration with two model calls: catalog FGMN selection
-	followed by a streamed sales response. The server validates selected identifiers and
-	owns all product cards and official URLs.
+  followed by a streamed sales response. The server validates selected identifiers and
+  owns all product cards and official URLs.
 - Retained TDS HTML enrichment for selected products and changed SDS to stable-link-only;
-	removed SDS PDF download/parsing and customer-facing missing-document messages.
+  removed SDS PDF download/parsing and customer-facing missing-document messages.
 - Removed shared-code/cookie authentication for the current public demo. WebSocket
-	upgrades still require an exact allowed origin.
+  upgrades still require an exact allowed origin.
 - Changed conversation ownership to one in-memory context per WebSocket connection and
-	increased the default substantive product-turn limit to 20. Reconnect starts a new
-	conversation.
+  increased the default substantive product-turn limit to 20. Reconnect starts a new
+  conversation.
 - Added structured redacted application logging and updated deployment configuration for
-	Bedrock. Local credential files remain excluded from Git.
+  Bedrock. Local credential files remain excluded from Git.
 
 ### Maintenance rule
 
