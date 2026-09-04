@@ -3,6 +3,7 @@ import { FormattedAnswer } from "./FormattedAnswer";
 import { ProductCard } from "./ProductCard";
 import { EastmanPageMock } from "./EastmanPageMock";
 import { useChatSocket } from "../hooks/useChatSocket";
+import { log } from "../lib/logger";
 import { chatReducer, initialChatState } from "../state/chat";
 import { safeEastmanUrl } from "../protocol/links";
 
@@ -12,7 +13,7 @@ const STARTERS = [
   "Compare AdapT 100 and AdapT 201",
 ];
 
-export function ChatShell({ onLogout }) {
+export function ChatShell() {
   const [state, dispatch] = useReducer(chatReducer, initialChatState);
   const [draft, setDraft] = useState("");
   const [isOpen, setIsOpen] = useState(true);
@@ -63,7 +64,6 @@ export function ChatShell({ onLogout }) {
           break;
         case "error":
           dispatch({ type: "request.error", message: event.message });
-          if (event.fatal) onLogout();
           break;
         default:
           break;
@@ -101,6 +101,7 @@ export function ChatShell({ onLogout }) {
       return;
 
     const requestId = crypto.randomUUID();
+    log("chat", "request_sent", { requestId, chars: trimmed.length });
     const sent = send({
       type: "chat.request",
       requestId,
@@ -368,18 +369,13 @@ export function ChatShell({ onLogout }) {
                 </button>
               )}
             </form>
-            <div className="widget-note">
-              <span>
-                {state.quota.limitReached
-                  ? "Eastman product support can continue your review."
-                  : state.quota.remainingProductTurns === 0
-                    ? "Send once more for Eastman contact guidance."
-                    : `${state.quota.remainingProductTurns} guided product ${state.quota.remainingProductTurns === 1 ? "question" : "questions"} remaining.`}
-              </span>
-              <button type="button" onClick={onLogout}>
-                End preview
-              </button>
-            </div>
+            <p className="widget-note">
+              {state.quota.limitReached
+                ? "Eastman product support can continue your review."
+                : state.quota.remainingProductTurns === 0
+                  ? "Send once more for Eastman contact guidance."
+                  : `${state.quota.remainingProductTurns} guided product ${state.quota.remainingProductTurns === 1 ? "question" : "questions"} remaining.`}
+            </p>
           </footer>
         </aside>
       ) : (

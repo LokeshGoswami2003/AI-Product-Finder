@@ -3,9 +3,9 @@
 | Field         | Value                                                            |
 | ------------- | ---------------------------------------------------------------- |
 | Purpose       | Canonical technical and product-discovery knowledge for the MVP  |
-| Last verified | 2026-09-03                                                       |
+| Last verified | 2026-09-04                                                       |
 | Current phase | Core implementation and minimal production deployment complete   |
-| Target stack  | React, Express, native WebSockets, Vercel AI Gateway, EC2, Nginx |
+| Target stack  | React, Express, native WebSockets, Amazon Bedrock, EC2, Nginx     |
 | Data policy   | No database and no persistent user/chat retention                |
 
 ## How to read this document
@@ -18,6 +18,13 @@ This file intentionally separates facts from design choices:
 - **Open deployment value** — a value such as model ID, AWS Region, domain, or timeout that must be selected in the target AWS account.
 
 Eastman endpoint behavior documented here was reverse-engineered from public web resources. It is not evidence of a supported or versioned public API contract. The ingestion pipeline must tolerate schema changes, failures, throttling, and removal of these resources.
+
+### Current-runtime authority
+
+The **2026-09-04 runtime snapshot** below is authoritative for the deployed
+application. Later sections retain useful source research and implementation history;
+where an older Vercel/OpenRouter, authentication, vector-retrieval, SDS-PDF, or
+reconnect-restoration statement conflicts with this snapshot, treat it as superseded.
 
 ## 1. Executive summary
 
@@ -33,16 +40,22 @@ Eastman endpoint behavior documented here was reverse-engineered from public web
 ### Decisions
 
 - Build a standalone React + Express service using native WebSockets.
-- Use Vercel AI Gateway with `zai/glm-5.3-flash` for MVP generation.
+- Use the Amazon Bedrock OpenAI-compatible endpoint with `deepseek.v3.2`.
 - Deploy one same-origin service on AWS EC2 behind Nginx.
-- Use one shared test access code, exchanged for a short-lived secure cookie.
-- Keep a bounded conversation transcript and recent validated product references in Express process memory, keyed by an anonymous signed-session nonce; never trust client-supplied history.
+- Keep bounded conversation history and recent validated product references only in
+	Express memory for the lifetime of one WebSocket connection.
 - Do not use a database or persist prompts, responses, histories, or query embeddings.
-- Apply a regional availability filter only when the user explicitly supplies a region.
+- Keep the public demo unauthenticated for the current simplified release; enforce exact
+	WebSocket origin checks and restore authentication before broader production use.
 
 ### Recommended solution
 
-Load the versioned local product corpus and complete Gemini vector artifact into Express memory. For each substantive chat request, use exact, lexical/fuzzy, semantic, deterministic requirement-aware, and validated recent-product context. Enrich no more than three products with query-relevant Eastman evidence, then stream a bounded, evidence-tiered answer from `zai/glm-5.3-flash`. The model does not receive the full `productfinder.json`. Complete facet memberships, captured canonical links, and deterministic comparison tables remain future improvements.
+Load the versioned local product corpus into Express memory. For each substantive chat
+request, send a trimmed `{fgmn,name,description}` view of all 979 products to Bedrock for
+selection, validate the returned FGMNs against the corpus, fetch TDS HTML for the selected
+one-to-three products, and make a second Bedrock call to stream the sales answer. SDS is
+link-only. Exact deterministic retrieval, shortlisting before the model, facet
+memberships, and deterministic comparison tables are future improvements.
 
 ## 2. MVP goals and boundaries
 
@@ -52,11 +65,10 @@ Load the versioned local product corpus and complete Gemini vector artifact into
 - Product questions grounded in public Eastman catalog/detail/TDS content.
 - Product comparisons using fields supported by common source evidence.
 - Exact product and FGMN lookup.
-- Brand, market, product type, application, and explicit-region filtering.
+- Natural-language matching from product names and short descriptions.
 - Official product detail, TDS, SDS selector, sales specification, and inquiry links.
-- Typed answer events, product cards, citations, progress, cancellation, reconnect restoration, and a deterministic sales handoff.
-- Static shared-code authentication suitable for a controlled MVP.
-- Versioned local product/index artifacts with scheduled refreshes.
+- Typed answer events, product cards, citations, progress, cancellation, and a deterministic sales handoff.
+- Versioned local product artifacts.
 - EC2, Nginx, TLS, systemd, IAM instance profile, health checks, and operational logging without chat content.
 
 ### Excluded from the MVP
@@ -66,7 +78,7 @@ Load the versioned local product corpus and complete Gemini vector artifact into
 - Saved, exported, searchable, persistent, or database-backed chat history.
 - Analytics containing prompts, responses, retrieved passages, or product-interest text.
 - Crawling Eastman during every user-facing chat request.
-- Persistent or universal storage of generated locale-specific SDS documents; runtime extracts are bounded, cached only in process memory for a short TTL, and tied to the selected Eastman SDS option.
+- Downloading, parsing, or caching locale-specific SDS PDFs; use the official stable selector link.
 - Pricing, real-time inventory, lead times, order placement, or sample submission inside the app.
 - Claims that a product is safe, compliant, approved, available, or suitable for a user’s final use.
 - Multilingual retrieval, voice, image input, high availability, or autoscaling.
@@ -77,23 +89,30 @@ Load the versioned local product corpus and complete Gemini vector artifact into
 
 `Backend/index.js` starts a CommonJS Express and `ws` service through `Backend/src/server.js`:
 
-- Uses Express `^5.2.1`, `ws`, Zod, MiniSearch, Cheerio, and `pdf-parse`.
-- Exposes liveness/readiness and shared-code session routes.
-- Authenticates exact-origin WebSocket upgrades with a signed HttpOnly cookie.
-- Loads the active immutable corpus into memory and performs exact, lexical/fuzzy, and deterministic requirement-aware retrieval.
-- Keeps bounded, anonymous, per-session conversation context in process memory and rejects client-supplied history.
-- Resolves follow-up pronouns, ordinals, terse document/location questions, and requests for other products from validated recent FGMNs.
-- Fetches and caches allowlisted Eastman TDS HTML and region-aware SDS PDF text for current shortlisted products.
-- Calls Vercel AI Gateway once for each supported substantive answer; social/scope responses, no-evidence responses, and fourth-turn handoff can use zero model calls.
-- Enforces one active request and three substantive product turns per signed session, with cancellation/error quota rollback.
-- Provides Node test, local ingestion, and active-corpus retrieval benchmark scripts.
+- Uses Express `^5.2.1`, `ws`, Zod, Helmet, and Cheerio.
+- Exposes liveness/readiness routes and an exact-origin WebSocket endpoint; authentication
+	routes and signed cookies are not present in the simplified runtime.
+- Loads the active immutable 979-product corpus into memory and creates a trimmed catalog
+	containing only FGMN, display name, and description.
+- Calls Bedrock twice for each substantive answer: JSON product selection, then streamed
+	sales generation. Both calls currently include the full trimmed catalog.
+- Validates every model-returned FGMN against an in-memory catalog map, removes duplicates,
+	and accepts at most three products. This guarantees catalog-valid identifiers but does
+	not make semantic ranking deterministic.
+- Keeps bounded conversation context and recent FGMNs in process memory per WebSocket
+	connection. Reconnecting creates a new conversation and does not restore prior context.
+- Fetches and caches allowlisted Eastman TDS HTML for selected products. SDS is link-only.
+- Enforces one active request and 20 substantive product turns per connection, with
+	cancellation/error quota rollback.
+- Provides Node tests and local catalog ingestion; vector/lexical retrieval and its
+	benchmark script were removed.
 
 ### Frontend — verified
 
 - React and React DOM are `^19.2.8`; Vite is `^8.2.2` and ESLint is `^10.9.0`.
-- The access gate exchanges the shared code for the server cookie without storing the code.
 - The floating responsive chat widget uses a reducer and reconnecting WebSocket hook.
-- React keeps only the rendering cache; `conversation.snapshot` restores authoritative bounded server messages and quota after connection/reconnection.
+- React keeps only the rendering cache. A new socket receives a new empty server snapshot;
+	reconnect does not restore the previous socket's server conversation.
 - The client sends only the current message, renders deterministic product cards and allowlisted official sources, and never automatically replays a generation.
 - The composer displays remaining guided questions and locks after the official Eastman inquiry handoff.
 - Frontend unit tests, lint, and production build scripts are implemented.
@@ -106,6 +125,25 @@ Load the versioned local product corpus and complete Gemini vector artifact into
 | `links.md`           | Original Eastman source URLs supplied during discovery                    |
 | `en.json`            | Eastman cookie/privacy configuration; not product retrieval content       |
 | `knowledge.md`       | This canonical discovery, architecture, and delivery record               |
+
+### 3.1 Current chat flow — authoritative
+
+1. The browser sends only the current `chat.request` over `/ws/chat`.
+2. Deterministic social/scope handling can answer without Bedrock or quota use.
+3. For a product turn, Bedrock receives the bounded product history, recent FGMNs, and
+	all 979 trimmed catalog entries, then returns `{"fgmns":[...]}`.
+4. The server parses JSON (with a numeric fallback), rejects unknown/duplicate FGMNs,
+	and resolves accepted identifiers to server-owned product records.
+5. The server fetches query-relevant TDS HTML for selected products when listed. Failed
+	or missing TDS evidence is omitted from customer-facing evidence. SDS remains a link.
+6. A second Bedrock request receives history, the full trimmed catalog, and selected
+	product evidence, then streams the final sales answer.
+7. Product cards and links are assembled from server records, never model-created URLs.
+
+Known tradeoff: selection is catalog-safe but not fully deterministic because the model
+chooses among similar products and no sampling controls are currently sent. A future
+retrieval stage should resolve exact FGMN/name matches and shortlist broad queries before
+generation, reducing token use and selection variance.
 
 ## 4. Local product catalog
 
@@ -1773,6 +1811,24 @@ Resolve these before production deployment:
 - Observed a free-tier `429` during the optional server-side public-search probe; the guarded research client continues to fail open without blocking catalog-grounded generation.
 - Restored `zai/glm-5.3-flash` as the generation model after production research-heavy Grok requests measured approximately 70 and 110 seconds end to end.
 
+### 2026-09-04
+
+- Simplified generation to the Amazon Bedrock OpenAI-compatible endpoint with
+	`deepseek.v3.2`; removed OpenRouter, Vercel, web-research, embedding, lexical/fuzzy,
+	rank-fusion, and provider-failover runtime paths.
+- Replaced retrieval-first orchestration with two model calls: catalog FGMN selection
+	followed by a streamed sales response. The server validates selected identifiers and
+	owns all product cards and official URLs.
+- Retained TDS HTML enrichment for selected products and changed SDS to stable-link-only;
+	removed SDS PDF download/parsing and customer-facing missing-document messages.
+- Removed shared-code/cookie authentication for the current public demo. WebSocket
+	upgrades still require an exact allowed origin.
+- Changed conversation ownership to one in-memory context per WebSocket connection and
+	increased the default substantive product-turn limit to 20. Reconnect starts a new
+	conversation.
+- Added structured redacted application logging and updated deployment configuration for
+	Bedrock. Local credential files remain excluded from Git.
+
 ### Maintenance rule
 
 Whenever the corpus, endpoint behavior, gateway/model, retention setting, deployment, or protocol changes:
@@ -1782,4 +1838,3 @@ Whenever the corpus, endpoint behavior, gateway/model, retention setting, deploy
 3. Separate changed verified behavior from implementation recommendations.
 4. Update fixtures and regression tests.
 5. Never silently overwrite historical assumptions that affect safety, privacy, or source correctness.
-   `

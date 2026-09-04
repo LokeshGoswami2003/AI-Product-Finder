@@ -1,14 +1,11 @@
+const { randomUUID } = require("node:crypto");
 const { WebSocketServer, WebSocket } = require("ws");
 
-const { readSessionCookie } = require("../auth/cookies");
-const { verifySessionToken } = require("../auth/session");
 const {
   classifyConversationalMessage,
 } = require("../chat/conversational-intent");
-const {
-  ConversationStore,
-  deriveConversationId,
-} = require("../chat/conversation-store");
+const { ConversationStore } = require("../chat/conversation-store");
+const { createLogger, previewText } = require("../config/logger");
 const { parseClientEvent } = require("../protocol/client-events");
 
 const EASTMAN_INQUIRY_URL =
@@ -44,10 +41,7 @@ function validateEventLimits(event, config) {
 }
 
 function classifyChatError(error) {
-  return error?.name === "OpenRouterError" ||
-    error?.name === "VercelAIGatewayError"
-    ? "model_error"
-    : "chat_error";
+  return error?.name === "BedrockError" ? "model_error" : "chat_error";
 }
 
 function serializeResults(retrieval = { results: [] }) {
@@ -55,13 +49,15 @@ function serializeResults(retrieval = { results: [] }) {
   const sources = [
     ...(retrieval.sources || []),
     ...results.flatMap((result) => result.sources || []),
-  ].filter(
-    (source, index, values) =>
-      values.findIndex(
-        (candidate) =>
-          candidate.id === source.id || candidate.url === source.url,
-      ) === index,
-  );
+  ]
+    .filter((source) => source?.url && source?.title)
+    .filter(
+      (source, index, values) =>
+        values.findIndex(
+          (candidate) =>
+            candidate.id === source.id || candidate.url === source.url,
+        ) === index,
+    );
   return {
     sources,
     products: results.map(({ product }) => ({
@@ -79,6 +75,7 @@ function attachChatWebSocket({
   orchestrator,
   corpusVersion,
   conversationStore,
+  logger = createLogger({ name: "websocket", level: config.LOG_LEVEL }),
 }) {
   const conversations =
     conversationStore ||
@@ -87,6 +84,7 @@ function attachChatWebSocket({
       maxHistoryTurns: config.CHAT_MAX_HISTORY_TURNS,
       maxHistoryChars: config.CHAT_MAX_HISTORY_CHARS,
     });
+  const wsLogger = logger.child("websocket");
   const webSocketServer = new WebSocketServer({
     noServer: true,
     maxPayload: config.WS_MAX_PAYLOAD_BYTES,
@@ -95,37 +93,33 @@ function attachChatWebSocket({
   server.on("upgrade", (request, socket, head) => {
     const requestUrl = new URL(request.url, "http://localhost");
     if (requestUrl.pathname !== "/ws/chat") {
+      wsLogger.warn("ws.upgrade_rejected", {
+        path: requestUrl.pathname,
+        status: 404,
+      });
       return rejectUpgrade(socket, "404 Not Found", "Not found");
     }
     if (request.headers.origin !== config.APP_ORIGIN) {
+      wsLogger.warn("ws.upgrade_rejected", {
+        origin: request.headers.origin || null,
+        status: 403,
+      });
       return rejectUpgrade(socket, "403 Forbidden", "Forbidden");
-    }
-
-    const token = readSessionCookie(config, request.headers.cookie);
-    const session = verifySessionToken(token, {
-      secret: config.COOKIE_SIGNING_SECRET,
-    });
-    if (!session) {
-      return rejectUpgrade(socket, "401 Unauthorized", "Unauthorized");
     }
 
     return webSocketServer.handleUpgrade(request, socket, head, (webSocket) => {
       webSocketServer.emit("connection", webSocket, {
-        conversationId: deriveConversationId(
-          session,
-          config.COOKIE_SIGNING_SECRET,
-        ),
-        sessionExpiresAt: session.exp * 1000,
+        conversationId: randomUUID(),
       });
     });
   });
 
   webSocketServer.on("connection", (socket, connection) => {
-    const conversation = conversations.getOrCreate(
-      connection.conversationId,
-      connection.sessionExpiresAt,
-    );
-    socket.sessionExpiresAt = connection.sessionExpiresAt;
+    const conversation = conversations.getOrCreate(connection.conversationId);
+    const connectionLogger = wsLogger.child(null, {
+      conversationId: connection.conversationId,
+    });
+    connectionLogger.info("ws.connected", { corpusVersion });
     let activeRequest = null;
     send(socket, {
       type: "connection.ready",
@@ -139,22 +133,11 @@ function attachChatWebSocket({
     });
 
     socket.on("message", async (data) => {
-      if (Date.now() >= connection.sessionExpiresAt) {
-        conversations.remove(connection.conversationId);
-        send(socket, {
-          type: "error",
-          code: "session_expired",
-          message: "Your session has expired. Please sign in again.",
-          fatal: true,
-        });
-        socket.close(1008, "Session expired");
-        return;
-      }
-
       let event;
       try {
         event = parseClientEvent(data.toString());
       } catch {
+        connectionLogger.warn("ws.invalid_event");
         send(socket, {
           type: "error",
           code: "invalid_event",
@@ -165,6 +148,9 @@ function attachChatWebSocket({
       }
 
       if (!validateEventLimits(event, config)) {
+        connectionLogger.warn("ws.request_too_large", {
+          requestId: event.requestId,
+        });
         send(socket, {
           type: "error",
           requestId: event.requestId,
@@ -191,6 +177,7 @@ function attachChatWebSocket({
           return;
         }
         conversations.clearTranscript(conversation);
+        connectionLogger.info("ws.chat_cleared");
         send(socket, {
           type: "conversation.snapshot",
           ...conversations.snapshot(conversation),
@@ -200,6 +187,9 @@ function attachChatWebSocket({
 
       if (event.type === "chat.cancel") {
         if (activeRequest?.requestId === event.requestId) {
+          connectionLogger.info("ws.chat_cancelled", {
+            requestId: event.requestId,
+          });
           activeRequest.controller.abort();
           conversations.failRequest(conversation, event.requestId);
           activeRequest = null;
@@ -241,6 +231,10 @@ function attachChatWebSocket({
         return;
       }
       if (requestState.status === "handoff") {
+        connectionLogger.info("ws.handoff", {
+          requestId: event.requestId,
+          usedProductTurns: conversations.quota(conversation).usedProductTurns,
+        });
         const sources = [HANDOFF_SOURCE];
         const products = [];
         const assistantMessage = { content: HANDOFF_TEXT, sources, products };
@@ -277,6 +271,11 @@ function attachChatWebSocket({
 
       const controller = new AbortController();
       activeRequest = { requestId: event.requestId, controller };
+      connectionLogger.info("ws.chat_accepted", {
+        requestId: event.requestId,
+        intent: intent?.type || "product",
+        ...previewText(event.message),
+      });
       send(socket, { type: "chat.accepted", requestId: event.requestId });
       if (!intent) {
         send(socket, {
@@ -344,9 +343,26 @@ function attachChatWebSocket({
           handoff: false,
           quota: conversations.quota(conversation),
         });
+        connectionLogger.info("ws.answer_done", {
+          requestId: event.requestId,
+          kind: answer.kind,
+          outcome: answer.retrieval?.outcome,
+          productCount: products.length,
+          sourceCount: sources.length,
+          usage: answer.usage,
+        });
       } catch (error) {
         conversations.failRequest(conversation, event.requestId);
-        if (!controller.signal.aborted) {
+        if (controller.signal.aborted) {
+          connectionLogger.info("ws.chat_aborted", {
+            requestId: event.requestId,
+          });
+        } else {
+          connectionLogger.error("ws.chat_failed", {
+            requestId: event.requestId,
+            code: classifyChatError(error),
+            error,
+          });
           send(socket, {
             type: "error",
             requestId: event.requestId,
@@ -363,6 +379,9 @@ function attachChatWebSocket({
     });
 
     socket.on("close", () => {
+      connectionLogger.info("ws.disconnected", {
+        activeRequestId: activeRequest?.requestId || null,
+      });
       activeRequest?.controller.abort();
       if (activeRequest)
         conversations.failRequest(conversation, activeRequest.requestId);
@@ -373,16 +392,6 @@ function attachChatWebSocket({
   const heartbeat = setInterval(() => {
     conversations.pruneExpired();
     for (const socket of webSocketServer.clients) {
-      if (Date.now() >= socket.sessionExpiresAt) {
-        send(socket, {
-          type: "error",
-          code: "session_expired",
-          message: "Your session has expired. Please sign in again.",
-          fatal: true,
-        });
-        socket.close(1008, "Session expired");
-        continue;
-      }
       if (socket.isAlive === false) {
         socket.terminate();
         continue;

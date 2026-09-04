@@ -1,12 +1,3 @@
-const { createHmac } = require("node:crypto");
-
-function deriveConversationId(session, secret) {
-  if (!session || typeof session.nonce !== "string" || session.nonce === "") {
-    throw new TypeError("A verified session nonce is required");
-  }
-  return createHmac("sha256", secret).update(session.nonce).digest("hex");
-}
-
 function cloneMessage(message) {
   return {
     id: message.id,
@@ -59,13 +50,13 @@ class ConversationStore {
     this.conversations = new Map();
   }
 
-  getOrCreate(id, sessionExpiresAt) {
+  getOrCreate(id, expiresAt = Number.POSITIVE_INFINITY) {
     this.pruneExpired();
     let conversation = this.conversations.get(id);
     if (!conversation) {
       conversation = {
         id,
-        expiresAt: sessionExpiresAt,
+        expiresAt,
         messages: [],
         contextMessages: [],
         productTurns: 0,
@@ -75,8 +66,8 @@ class ConversationStore {
         activeRequest: null,
       };
       this.conversations.set(id, conversation);
-    } else {
-      conversation.expiresAt = sessionExpiresAt;
+    } else if (Number.isFinite(expiresAt)) {
+      conversation.expiresAt = expiresAt;
     }
     return conversation;
   }
@@ -221,4 +212,4 @@ class ConversationStore {
   }
 }
 
-module.exports = { ConversationStore, boundedMessages, deriveConversationId };
+module.exports = { ConversationStore, boundedMessages };

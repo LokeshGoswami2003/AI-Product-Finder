@@ -2,62 +2,33 @@ const http = require("node:http");
 const path = require("node:path");
 
 const { createApp } = require("./app");
-const {
-  ConversationStore,
-  deriveConversationId,
-} = require("./chat/conversation-store");
+const { ConversationStore } = require("./chat/conversation-store");
+const { BedrockClient } = require("./bedrock/client");
 const { ChatOrchestrator } = require("./chat/orchestrator");
 const { loadActiveRelease } = require("./corpus/load-release");
 const { parseEnv } = require("./config/env");
-const { EmbeddingClient } = require("./embeddings/client");
-const { EMBEDDING_PROFILE } = require("./embeddings/retrieval-text");
-const { ResilientGenerationClient } = require("./generation/resilient-client");
-const { OpenRouterClient } = require("./openrouter/client");
+const { createLogger } = require("./config/logger");
 const {
   EastmanDocumentClient,
 } = require("./documents/eastman-document-client");
-const { ProductRetriever } = require("./retrieval/retriever");
-const { PublicWebResearchClient } = require("./research/public-web");
-const { VercelAIGatewayClient } = require("./vercel-ai-gateway/client");
 const { attachChatWebSocket } = require("./websocket/chat-server");
 
-function createGenerationClient(config) {
-  const openRouterOptions = {
-    model: config.OPENROUTER_MODEL,
-    baseUrl: config.OPENROUTER_BASE_URL,
-    siteUrl: config.OPENROUTER_SITE_URL || config.APP_ORIGIN,
-    appName: config.OPENROUTER_APP_NAME,
-  };
-  const clients = [
-    new OpenRouterClient({
-      ...openRouterOptions,
-      apiKey: config.OPENROUTER_API_KEY,
-    }),
-  ];
-
-  if (config.OPENROUTER_BACKUP_API_KEY) {
-    clients.push(
-      new OpenRouterClient({
-        ...openRouterOptions,
-        apiKey: config.OPENROUTER_BACKUP_API_KEY,
-      }),
-    );
-  }
-  if (config.VERCEL_GENERATION_FALLBACK_ENABLED) {
-    clients.push(
-      new VercelAIGatewayClient({
-        apiKey: config.VERCEL_AI_GATEWAY_API_KEY,
-        model: config.VERCEL_AI_GATEWAY_MODEL,
-        fallbackModels: config.VERCEL_AI_GATEWAY_FALLBACK_MODELS,
-        baseUrl: config.VERCEL_AI_GATEWAY_BASE_URL,
-      }),
-    );
-  }
-
-  return new ResilientGenerationClient({ clients });
+function createGenerationClient(config, logger) {
+  return new BedrockClient({
+    apiKey: config.BEDROCK_API_KEY,
+    model: config.BEDROCK_MODEL,
+    region: config.BEDROCK_REGION,
+    baseUrl: config.BEDROCK_BASE_URL,
+    timeoutMs: config.BEDROCK_TIMEOUT_MS,
+    logger,
+  });
 }
 
-async function createServer({ config = parseEnv(), modelClient } = {}) {
+async function createServer({
+  config = parseEnv(),
+  modelClient,
+  logger = createLogger({ name: "server", level: config.LOG_LEVEL }),
+} = {}) {
   const conversationStore = new ConversationStore({
     maxProductTurns: config.CHAT_MAX_PRODUCT_TURNS,
     maxHistoryTurns: config.CHAT_MAX_HISTORY_TURNS,
@@ -67,8 +38,17 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
   let readinessError = null;
   try {
     corpus = await loadActiveRelease(path.resolve(config.CORPUS_ARTIFACT_DIR));
+    logger.info("corpus.loaded", {
+      releaseId: corpus.manifest.releaseId,
+      productCount: corpus.products.length,
+      corpusStatus: corpus.report.status,
+    });
   } catch (error) {
     readinessError = error;
+    logger.error("corpus.load_failed", {
+      artifactDir: config.CORPUS_ARTIFACT_DIR,
+      error,
+    });
   }
 
   const readiness = () => ({
@@ -81,71 +61,22 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
   const app = createApp({
     config,
     readiness,
-    onSessionLogout(session) {
-      conversationStore.remove(
-        deriveConversationId(session, config.COOKIE_SIGNING_SECRET),
-      );
-    },
+    logger,
   });
   const server = http.createServer(app);
 
   if (corpus) {
-    let embeddingClient = null;
-    if (config.EMBEDDING_ENABLED && corpus.vectorSearch) {
-      const releaseEmbeddings = corpus.manifest.embeddings;
-      if (releaseEmbeddings.profile !== EMBEDDING_PROFILE) {
-        throw new Error(
-          `Embedding profile mismatch: release uses ${releaseEmbeddings.profile || "none"}, runtime uses ${EMBEDDING_PROFILE}`,
-        );
-      }
-      if (releaseEmbeddings.model !== config.EMBEDDING_MODEL) {
-        throw new Error(
-          `Embedding model mismatch: release uses ${releaseEmbeddings.model}, configuration uses ${config.EMBEDDING_MODEL}`,
-        );
-      }
-      if (
-        config.EMBEDDING_DIMENSIONS &&
-        releaseEmbeddings.dimensions !== config.EMBEDDING_DIMENSIONS
-      ) {
-        throw new Error(
-          `Embedding dimension mismatch: release uses ${releaseEmbeddings.dimensions}, configuration uses ${config.EMBEDDING_DIMENSIONS}`,
-        );
-      }
-      embeddingClient = new EmbeddingClient({
-        apiKey: config.EMBEDDING_API_KEY,
-        backupApiKey: config.EMBEDDING_BACKUP_API_KEY,
-        model: config.EMBEDDING_MODEL,
-        baseUrl: config.EMBEDDING_BASE_URL,
-        batchSize: config.EMBEDDING_BATCH_SIZE,
-        timeoutMs: config.EMBEDDING_TIMEOUT_MS,
-        expectedDimensions: releaseEmbeddings.dimensions,
-      });
-    }
-    const retriever = new ProductRetriever({ ...corpus, embeddingClient });
-    const client = modelClient || createGenerationClient(config);
+    const client = modelClient || createGenerationClient(config, logger);
     const documentClient = new EastmanDocumentClient({
       timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,
       cacheTtlMs: config.DOCUMENT_CACHE_TTL_SECONDS * 1000,
+      logger,
     });
-    const researchClient = config.WEB_SEARCH_ENABLED
-      ? new PublicWebResearchClient({
-          modelClient:
-            modelClient ||
-            new VercelAIGatewayClient({
-              apiKey: config.VERCEL_AI_GATEWAY_API_KEY,
-              model: config.VERCEL_RESEARCH_MODEL,
-              baseUrl: config.VERCEL_AI_GATEWAY_BASE_URL,
-            }),
-          maxResults: config.WEB_SEARCH_MAX_RESULTS,
-          timeoutMs: config.WEB_SEARCH_TIMEOUT_MS,
-        })
-      : null;
     const orchestrator = new ChatOrchestrator({
-      retriever,
+      products: corpus.products,
       documentClient,
       modelClient: client,
-      researchClient,
-      knowledgeFallbackEnabled: config.KNOWLEDGE_FALLBACK_ENABLED,
+      logger,
     });
     attachChatWebSocket({
       server,
@@ -153,6 +84,7 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
       orchestrator,
       corpusVersion: corpus.manifest.releaseId,
       conversationStore,
+      logger,
     });
   }
 
@@ -161,11 +93,20 @@ async function createServer({ config = parseEnv(), modelClient } = {}) {
 
 async function start() {
   const config = parseEnv();
-  const { server } = await createServer({ config });
+  const logger = createLogger({ name: "server", level: config.LOG_LEVEL });
+  logger.info("server.starting", {
+    env: config.NODE_ENV,
+    port: config.PORT,
+    origin: config.APP_ORIGIN,
+    model: config.BEDROCK_MODEL,
+    region: config.BEDROCK_REGION,
+  });
+  const { server } = await createServer({ config, logger });
   server.listen(config.PORT, "127.0.0.1", () => {
-    process.stdout.write(
-      `AI Product Finder listening on 127.0.0.1:${config.PORT}\n`,
-    );
+    logger.info("server.listening", {
+      host: "127.0.0.1",
+      port: config.PORT,
+    });
   });
 }
 

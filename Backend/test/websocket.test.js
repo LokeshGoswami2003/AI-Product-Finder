@@ -4,7 +4,6 @@ const http = require("node:http");
 const test = require("node:test");
 const { WebSocket } = require("ws");
 
-const { createSessionToken } = require("../src/auth/session");
 const {
   attachChatWebSocket,
   classifyChatError,
@@ -13,9 +12,7 @@ const {
 
 const config = {
   APP_ORIGIN: "http://localhost:5173",
-  COOKIE_SIGNING_SECRET: "01234567890123456789012345678901",
-  AUTH_COOKIE_NAME: "product_finder_session",
-  AUTH_TTL_SECONDS: 3600,
+  LOG_LEVEL: "silent",
   CHAT_MAX_MESSAGE_CHARS: 4000,
   CHAT_MAX_PRODUCT_TURNS: 3,
   CHAT_MAX_HISTORY_TURNS: 10,
@@ -35,7 +32,7 @@ async function close(server, webSocketServer) {
   await new Promise((resolve) => server.close(resolve));
 }
 
-test("authenticated WebSocket emits the complete protocol lifecycle", async (context) => {
+test("WebSocket emits the complete protocol lifecycle", async (context) => {
   const server = http.createServer();
   const webSocketServer = attachChatWebSocket({
     server,
@@ -69,13 +66,8 @@ test("authenticated WebSocket emits the complete protocol lifecycle", async (con
   });
   context.after(() => close(server, webSocketServer));
   const port = await listen(server);
-  const token = createSessionToken({
-    secret: config.COOKIE_SIGNING_SECRET,
-    ttlSeconds: config.AUTH_TTL_SECONDS,
-  });
   const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/chat`, {
     origin: config.APP_ORIGIN,
-    headers: { Cookie: `${config.AUTH_COOKIE_NAME}=${token}` },
   });
   const events = [];
 
@@ -124,7 +116,7 @@ test("authenticated WebSocket emits the complete protocol lifecycle", async (con
   socket.close();
 });
 
-test("WebSocket rejects unauthenticated upgrades", async (context) => {
+test("WebSocket rejects upgrades from a different origin", async (context) => {
   const server = http.createServer();
   const webSocketServer = attachChatWebSocket({
     server,
@@ -135,7 +127,7 @@ test("WebSocket rejects unauthenticated upgrades", async (context) => {
   context.after(() => close(server, webSocketServer));
   const port = await listen(server);
   const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/chat`, {
-    origin: config.APP_ORIGIN,
+    origin: "https://attacker.example",
   });
 
   const statusCode = await new Promise((resolve) => {
@@ -143,7 +135,7 @@ test("WebSocket rejects unauthenticated upgrades", async (context) => {
       resolve(response.statusCode),
     );
   });
-  assert.equal(statusCode, 401);
+  assert.equal(statusCode, 403);
 });
 
 test("WebSocket request limits bound current messages", () => {
@@ -161,16 +153,15 @@ test("WebSocket request limits bound current messages", () => {
   );
 });
 
-test("WebSocket classifies both provider transports as model errors", () => {
-  assert.equal(classifyChatError({ name: "OpenRouterError" }), "model_error");
+test("WebSocket classifies Bedrock failures as model errors", () => {
+  assert.equal(classifyChatError({ name: "BedrockError" }), "model_error");
   assert.equal(
-    classifyChatError({ name: "VercelAIGatewayError" }),
-    "model_error",
+    classifyChatError(new Error("document fetch failed")),
+    "chat_error",
   );
-  assert.equal(classifyChatError(new Error("retrieval failed")), "chat_error");
 });
 
-test("server context survives reconnect and the fourth product request returns a handoff", async (context) => {
+test("conversation context and the fourth product request return a handoff", async (context) => {
   const server = http.createServer();
   const calls = [];
   const product = {
@@ -219,46 +210,11 @@ test("server context survives reconnect and the fourth product request returns a
   });
   context.after(() => close(server, webSocketServer));
   const port = await listen(server);
-  const token = createSessionToken({
-    secret: config.COOKIE_SIGNING_SECRET,
-    ttlSeconds: config.AUTH_TTL_SECONDS,
-  });
-  const socketOptions = {
+  const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/chat`, {
     origin: config.APP_ORIGIN,
-    headers: { Cookie: `${config.AUTH_COOKIE_NAME}=${token}` },
-  };
-
-  const firstSocket = new WebSocket(
-    `ws://127.0.0.1:${port}/ws/chat`,
-    socketOptions,
-  );
-  await new Promise((resolve, reject) => {
-    let sent = false;
-    firstSocket.on("error", reject);
-    firstSocket.on("message", (data) => {
-      const event = JSON.parse(data.toString());
-      if (event.type === "conversation.snapshot" && !sent) {
-        sent = true;
-        firstSocket.send(
-          JSON.stringify({
-            type: "chat.request",
-            requestId: randomUUID(),
-            message: "Tell me about AdapT 100",
-            region: null,
-          }),
-        );
-      }
-      if (event.type === "answer.done") resolve();
-    });
   });
-  firstSocket.close();
-  await new Promise((resolve) => firstSocket.once("close", resolve));
-
-  const secondSocket = new WebSocket(
-    `ws://127.0.0.1:${port}/ws/chat`,
-    socketOptions,
-  );
   const messages = [
+    "Tell me about AdapT 100",
     "Hello there",
     "What about its technical properties?",
     "Tell me more about it",
@@ -266,18 +222,18 @@ test("server context survives reconnect and the fourth product request returns a
   ];
   const doneEvents = [];
   const sourceEvents = [];
-  let restoredSnapshot;
+  let snapshot;
   let nextMessage = 0;
 
   await new Promise((resolve, reject) => {
-    secondSocket.on("error", reject);
-    secondSocket.on("message", (data) => {
+    socket.on("error", reject);
+    socket.on("message", (data) => {
       const event = JSON.parse(data.toString());
-      if (event.type === "conversation.snapshot" && !restoredSnapshot) {
-        restoredSnapshot = event;
+      if (event.type === "conversation.snapshot" && !snapshot) {
+        snapshot = event;
         const message = messages[nextMessage];
         nextMessage += 1;
-        secondSocket.send(
+        socket.send(
           JSON.stringify({
             type: "chat.request",
             requestId: randomUUID(),
@@ -292,7 +248,7 @@ test("server context survives reconnect and the fourth product request returns a
         if (nextMessage < messages.length) {
           const message = messages[nextMessage];
           nextMessage += 1;
-          secondSocket.send(
+          socket.send(
             JSON.stringify({
               type: "chat.request",
               requestId: randomUUID(),
@@ -307,10 +263,10 @@ test("server context survives reconnect and the fourth product request returns a
     });
   });
 
-  assert.equal(restoredSnapshot.quota.usedProductTurns, 1);
-  assert.equal(restoredSnapshot.messages.length, 2);
+  assert.equal(snapshot.quota.usedProductTurns, 0);
+  assert.equal(snapshot.messages.length, 0);
   assert.equal(
-    doneEvents[0].quota.usedProductTurns,
+    doneEvents[1].quota.usedProductTurns,
     1,
     "a greeting must not use quota",
   );
@@ -336,5 +292,5 @@ test("server context survives reconnect and the fourth product request returns a
       (entry) => entry.content === "Grounded answer 1",
     ),
   );
-  secondSocket.close();
+  socket.close();
 });

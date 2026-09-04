@@ -5,23 +5,7 @@ const {
   classifyConversationalMessage,
   stripLeadingGreeting,
 } = require("../src/chat/conversational-intent");
-const {
-  ConversationStore,
-  deriveConversationId,
-} = require("../src/chat/conversation-store");
-
-const session = { nonce: "test-session-nonce" };
-const secret = "01234567890123456789012345678901";
-
-test("conversation identities are stable, anonymous, and session-specific", () => {
-  const identifier = deriveConversationId(session, secret);
-  assert.match(identifier, /^[a-f0-9]{64}$/);
-  assert.equal(identifier, deriveConversationId(session, secret));
-  assert.notEqual(
-    identifier,
-    deriveConversationId({ nonce: "another-session" }, secret),
-  );
-});
+const { ConversationStore } = require("../src/chat/conversation-store");
 
 test("social intent handles conversation controls without guessing topic scope", () => {
   for (const message of [
@@ -171,7 +155,7 @@ test("completed catalog no-match requests restore product quota", () => {
   assert.equal(store.snapshot(conversation).messages.length, 2);
 });
 
-test("conversation store evicts context when the signed session expires", () => {
+test("conversation store evicts context when it expires", () => {
   let now = 1_000;
   const store = new ConversationStore({ now: () => now });
   const conversation = store.getOrCreate("conversation-1", 2_000);

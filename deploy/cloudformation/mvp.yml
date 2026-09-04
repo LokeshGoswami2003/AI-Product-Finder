@@ -127,7 +127,7 @@ Resources:
       SecurityGroupEgress:
         - IpProtocol: '-1'
           CidrIp: 0.0.0.0/0
-          Description: Package, AWS API, and Vercel AI Gateway access
+          Description: Package, AWS API, Bedrock endpoint, and Eastman source access
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-${EnvironmentName}'

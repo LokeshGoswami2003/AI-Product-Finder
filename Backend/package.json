@@ -8,17 +8,12 @@
     "start": "node --env-file-if-exists=.env index.js",
     "dev": "nodemon --exec \"node --env-file-if-exists=.env\" index.js",
     "test": "node --test",
-    "ingest": "node --env-file-if-exists=.env scripts/ingest-local.js",
-    "benchmark:retrieval": "node --env-file-if-exists=.env scripts/benchmark-retrieval.js"
+    "ingest": "node --env-file-if-exists=.env scripts/ingest-local.js"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
-    "cookie": "^1.0.2",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
-    "minisearch": "^7.2.0",
-    "pdf-parse": "^2.4.5",
     "ws": "^8.18.3",
     "zod": "^4.5.4"
   },

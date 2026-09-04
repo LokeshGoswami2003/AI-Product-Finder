@@ -2,9 +2,12 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-  buildRetrievalPlan,
   ChatOrchestrator,
+  SALES_SYSTEM_PROMPT,
+  SELECTION_SYSTEM_PROMPT,
+  buildDocumentPlan,
 } = require("../src/chat/orchestrator");
+const { parseSelectedFgmns, trimCatalog } = require("../src/chat/catalog");
 
 const product = {
   fgmn: "71103853",
@@ -17,45 +20,62 @@ const product = {
     sds: "https://ws.eastman.com/sds",
   },
 };
-const retrieval = {
-  outcome: "exact",
-  results: [
-    {
-      product,
-      sources: [
-        { id: "product:71103853", url: "https://www.eastman.com/product" },
-      ],
-    },
-  ],
+
+const otherProduct = {
+  fgmn: "71068692",
+  displayName: "Eastman Tritan GX100",
+  description: "Copolyester for heavy-gauge sheet.",
+  documents: { hasTds: true, hasSds: true },
+  links: {
+    detail: "https://www.eastman.com/tritan",
+    tds: "https://productcatalog.eastman.com/tds-tritan",
+    sds: "https://ws.eastman.com/sds-tritan",
+  },
 };
 
-test("chat orchestration retrieves before generation and bounds model evidence", async () => {
-  let request;
+function completion(content, usage = { total_tokens: 10 }) {
+  return { choices: [{ message: { content } }], usage };
+}
+
+test("selected FGMNs are limited to known catalog identifiers", () => {
+  assert.deepEqual(
+    parseSelectedFgmns('{"fgmns":["71103853","99999999"]}', ["71103853"]),
+    ["71103853"],
+  );
+  assert.deepEqual(
+    parseSelectedFgmns("The best match is 71103853.", ["71103853", "71068692"]),
+    ["71103853"],
+  );
+});
+
+test("chat orchestration asks the model for FGMNs, fetches documents, then answers", async () => {
+  const requests = [];
   const orchestrator = new ChatOrchestrator({
-    retriever: { retrieve: async () => retrieval },
+    products: [product, otherProduct],
     documentClient: {
-      enrichProduct: async (_product, plan) => [
-        {
-          type: "tds",
-          status: "available",
-          label: "Technical data sheet",
-          text: "Density: 1.04 g/cm3",
-          source: { id: "tds:71103853", url: product.links.tds },
-          plan,
-        },
-      ],
+      enrichProduct: async (selected, plan) => {
+        assert.deepEqual(plan, { includeTds: true, includeSds: false });
+        assert.equal(selected.fgmn, "71103853");
+        return [
+          {
+            type: "tds",
+            status: "available",
+            label: "Technical data sheet",
+            text: "Density: 1.04 g/cm3",
+            source: { id: "tds:71103853", url: product.links.tds },
+          },
+        ];
+      },
     },
     modelClient: {
-      createChatCompletion: async (value) => {
-        request = value;
-        return {
-          choices: [
-            {
-              message: { content: "AdapT 100 matches the supplied evidence." },
-            },
-          ],
-          usage: { total_tokens: 42 },
-        };
+      createChatCompletion: async (request) => {
+        requests.push(request);
+        if (requests.length === 1) {
+          return completion('{"fgmns":["71103853"]}', { total_tokens: 12 });
+        }
+        return completion("AdapT 100 matches the supplied evidence.", {
+          total_tokens: 30,
+        });
       },
     },
   });
@@ -63,84 +83,30 @@ test("chat orchestration retrieves before generation and bounds model evidence",
   const answer = await orchestrator.answer({
     message: "Tell me about AdapT 100",
     history: [],
-    signal: AbortSignal.timeout(1_000),
   });
 
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].messages[0].content, SELECTION_SYSTEM_PROMPT);
+  assert.match(requests[0].messages.at(-1).content, /PRODUCT_CATALOG_JSON/);
+  assert.match(requests[0].messages.at(-1).content, /71103853/);
+  assert.match(requests[0].messages.at(-1).content, /71068692/);
+  assert.equal(requests[1].messages[0].content, SALES_SYSTEM_PROMPT);
+  assert.match(requests[1].messages.at(-1).content, /Density: 1\.04 g\/cm3/);
   assert.match(answer.text, /AdapT 100/);
-  assert.match(request.messages.at(-1).content, /71103853/);
-  assert.match(request.messages.at(-1).content, /Density: 1\.04 g\/cm3/);
-  assert.match(
-    request.messages[0].content,
-    /catalog, TDS, and SDS evidence is authoritative/i,
-  );
-  assert.match(
-    request.messages[0].content,
-    /experienced Eastman product sales representative/i,
-  );
-  assert.deepEqual(answer.plan, {
-    mode: "product-detail",
-    maxProducts: 1,
-    includeTds: true,
-    includeSds: false,
-  });
   assert.deepEqual(
     answer.retrieval.results[0].sources.map((source) => source.id),
-    ["product:71103853", "tds:71103853"],
+    ["product:71103853", "tds:71103853", "sds:71103853"],
   );
-  assert.deepEqual(answer.usage, { total_tokens: 42 });
-});
-
-test("chat orchestration uses retrieval evidence to reject unrelated topics", async () => {
-  let modelCalled = false;
-  const retrievalQueries = [];
-  const orchestrator = new ChatOrchestrator({
-    retriever: {
-      retrieve: async (query) => {
-        retrievalQueries.push(query);
-        return { outcome: "no-evidence", results: [] };
-      },
-    },
-    documentClient: {
-      enrichProduct: async () => assert.fail("must not fetch documents"),
-    },
-    modelClient: {
-      createChatCompletion: async () => {
-        modelCalled = true;
-      },
-    },
+  assert.deepEqual(answer.usage, {
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 42,
   });
-
-  for (const message of [
-    "What is the capital of China?",
-    "Write a sorting algorithm",
-    "Give me a pasta recipe",
-    "Who won yesterday's football match?",
-    "Explain quantum gravity",
-  ]) {
-    const answer = await orchestrator.answer({ message, history: [] });
-    assert.equal(answer.kind, "out-of-scope");
-    assert.deepEqual(answer.retrieval.results, []);
-    assert.match(
-      answer.text,
-      /focused on Eastman products and related material/i,
-    );
-  }
-
-  assert.equal(modelCalled, false);
-  assert.deepEqual(retrievalQueries, [
-    "What is the capital of China?",
-    "Write a sorting algorithm",
-    "Give me a pasta recipe",
-    "Who won yesterday's football match?",
-    "Explain quantum gravity",
-  ]);
 });
 
-test("chat orchestration answers social messages without retrieval, documents, or model calls", async () => {
+test("chat orchestration answers social messages without model or document calls", async () => {
   const orchestrator = new ChatOrchestrator({
-    retriever: {
-      retrieve: async () => assert.fail("must not retrieve greetings"),
-    },
+    products: [product],
     documentClient: {
       enrichProduct: async () =>
         assert.fail("must not fetch greeting documents"),
@@ -160,21 +126,18 @@ test("chat orchestration answers social messages without retrieval, documents, o
   assert.deepEqual(answer.retrieval.results, []);
 });
 
-test("chat orchestration sends server context to retrieval and the model", async () => {
-  let receivedContext;
-  let modelMessages;
+test("follow-up questions reuse history and recent FGMNs", async () => {
+  const requests = [];
   const orchestrator = new ChatOrchestrator({
-    retriever: {
-      retrieve: async (_message, options) => {
-        receivedContext = options.context;
-        return retrieval;
-      },
-    },
+    products: [product, otherProduct],
     documentClient: { enrichProduct: async () => [] },
     modelClient: {
-      createChatCompletion: async ({ messages }) => {
-        modelMessages = messages;
-        return { choices: [{ message: { content: "Context-aware answer" } }] };
+      createChatCompletion: async (request) => {
+        requests.push(request);
+        if (requests.length === 1) {
+          return completion('{"fgmns":["71103853"]}');
+        }
+        return completion("Its flash point is listed on the TDS.");
       },
     },
   });
@@ -182,177 +145,76 @@ test("chat orchestration sends server context to retrieval and the model", async
     { role: "user", content: "Tell me about AdapT 100" },
     { role: "assistant", content: "AdapT 100 is a shortlisted option." },
   ];
-  const retrievalContext = {
-    recentProductFgmns: ["71103853"],
-    lastProductRequest: "Tell me about AdapT 100",
-  };
 
   await orchestrator.answer({
     message: "What about its technical properties?",
     history,
-    retrievalContext,
+    retrievalContext: {
+      recentProductFgmns: ["71103853"],
+      lastProductRequest: "Tell me about AdapT 100",
+    },
   });
 
-  assert.deepEqual(receivedContext, retrievalContext);
-  assert.deepEqual(modelMessages.slice(1, 3), history);
+  assert.deepEqual(requests[0].messages.slice(1, 3), history);
+  assert.match(
+    requests[0].messages.at(-1).content,
+    /RECENT_PRODUCT_FGMNS_JSON/,
+  );
+  assert.match(requests[0].messages.at(-1).content, /71103853/);
+  assert.deepEqual(requests[1].messages.slice(1, 3), history);
 });
 
-test("chat orchestration gives the model explicit partial-fit context", async () => {
-  let modelMessages;
-  const partialRetrieval = {
-    outcome: "recommendation",
-    requirements: [
-      {
-        id: "adhesive-application",
-        kind: "application",
-        label: "adhesive or bonding application",
-      },
-      {
-        id: "transparent",
-        kind: "property",
-        label: "transparency or optical clarity",
-      },
-    ],
-    results: [
-      {
-        product: {
-          ...product,
-          displayName: "Adhesive formulation resin",
-          description: "A resin for hot melt adhesive applications.",
-        },
-        sources: [{ id: "product:71103853", url: product.links.detail }],
-        matchedRequirements: [
-          {
-            id: "adhesive-application",
-            kind: "application",
-            label: "adhesive or bonding application",
-          },
-        ],
-        unverifiedRequirements: [
-          {
-            id: "transparent",
-            kind: "property",
-            label: "transparency or optical clarity",
-          },
-        ],
-      },
-    ],
-  };
+test("a later product search can select a different catalog item", async () => {
+  const requests = [];
   const orchestrator = new ChatOrchestrator({
-    retriever: { retrieve: async () => partialRetrieval },
-    documentClient: { enrichProduct: async () => [] },
-    modelClient: {
-      createChatCompletion: async ({ messages }) => {
-        modelMessages = messages;
-        return {
-          choices: [
-            {
-              message: {
-                content:
-                  "Eastman offers a formulation resin to evaluate; transparency still needs validation.",
-              },
-            },
-          ],
-        };
-      },
-    },
-  });
-
-  await orchestrator.answer({
-    message: "Give me options for a transparent adhesive",
-  });
-
-  assert.match(
-    modelMessages[0].content,
-    /constructive formulation or product-development paths/i,
-  );
-  assert.match(
-    modelMessages.at(-1).content,
-    /"supportedRequirements":\[\{"id":"adhesive-application"/,
-  );
-  assert.match(
-    modelMessages.at(-1).content,
-    /"unverifiedRequirements":\[\{"id":"transparent"/,
-  );
-});
-
-test("retrieval planning adds SDS only for safety intent and bounds comparisons", () => {
-  assert.deepEqual(
-    buildRetrievalPlan("Compare safe handling and PPE for these options", {
-      outcome: "recommendation",
-    }),
-    {
-      mode: "comparison",
-      maxProducts: 3,
-      includeTds: true,
-      includeSds: true,
-    },
-  );
-  assert.deepEqual(
-    buildRetrievalPlan("Find a coating resin", { outcome: "recommendation" }),
-    {
-      mode: "recommendation",
-      maxProducts: 3,
-      includeTds: true,
-      includeSds: false,
-    },
-  );
-});
-
-test("safety scenario passes catalog, TDS, and SDS evidence to the sales response", async () => {
-  let requestedPlan;
-  let modelRequest;
-  const orchestrator = new ChatOrchestrator({
-    retriever: { retrieve: async () => retrieval },
+    products: [product, otherProduct],
     documentClient: {
-      enrichProduct: async (_product, plan) => {
-        requestedPlan = plan;
-        return [
-          {
-            type: "tds",
-            status: "available",
-            label: "Technical data sheet",
-            text: "Flash point: 138 C",
-            source: { id: "tds:71103853", url: product.links.tds },
-          },
-          {
-            type: "sds",
-            status: "available",
-            label: "India (English)",
-            text: "Use protective gloves.",
-            source: { id: "sds:71103853", url: product.links.sds },
-          },
-        ];
+      enrichProduct: async (selected) => {
+        assert.equal(selected.fgmn, "71068692");
+        return [];
       },
     },
     modelClient: {
       createChatCompletion: async (request) => {
-        modelRequest = request;
-        return {
-          choices: [
-            {
-              message: {
-                content:
-                  "AdapT 100 fits selective H2S removal.\n\n### Safety\n- Use protective gloves.\n\n### Next step\nConfirm the operating region.",
-              },
-            },
-          ],
-        };
+        requests.push(request);
+        if (requests.length === 1) {
+          return completion('{"fgmns":["71068692"]}');
+        }
+        return completion("Tritan GX100 is the better next look.");
       },
     },
   });
 
   const answer = await orchestrator.answer({
-    message: "What SDS handling information applies to AdapT 100 in India?",
-    history: [],
+    message: "Now show me a copolyester for heavy-gauge sheet",
+    history: [
+      { role: "user", content: "Tell me about AdapT 100" },
+      { role: "assistant", content: "AdapT 100 is a shortlisted option." },
+    ],
+    retrievalContext: { recentProductFgmns: ["71103853"] },
   });
 
-  assert.equal(requestedPlan.includeSds, true);
-  assert.match(modelRequest.messages.at(-1).content, /India \(English\)/);
-  assert.match(modelRequest.messages.at(-1).content, /Use protective gloves/);
-  assert.match(answer.text, /### Next step/);
-  assert.deepEqual(
-    answer.retrieval.results[0].sources.map((source) => source.id),
-    ["product:71103853", "tds:71103853", "sds:71103853"],
-  );
+  assert.equal(answer.retrieval.results[0].product.fgmn, "71068692");
+  assert.match(requests[1].messages.at(-1).content, /71068692/);
+});
+
+test("document enrichment fetches TDS text and leaves SDS as a link", () => {
+  assert.deepEqual(buildDocumentPlan("Find a coating resin"), {
+    includeTds: true,
+    includeSds: false,
+  });
+  assert.deepEqual(buildDocumentPlan("Need the SDS for India"), {
+    includeTds: true,
+    includeSds: false,
+  });
+});
+
+test("trimmed catalog keeps only the fields needed for demo prompting", () => {
+  assert.deepEqual(trimCatalog([product]), [
+    {
+      fgmn: "71103853",
+      name: "AdapT 100",
+      description: "MDEA-based solvent for selective H2S removal.",
+    },
+  ]);
 });

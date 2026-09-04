@@ -12,7 +12,7 @@ deployment role. SSH is deliberately not exposed.
 - The backend listens only on `127.0.0.1:3000` under systemd.
 - Runtime secrets are held in an encrypted SSM `SecureString`, not in Git,
   GitHub variables, user data, or deployment bundles.
-- GitHub Actions validates each commit and the versioned active vector corpus,
+- GitHub Actions validates each commit and the versioned active product corpus,
   bundles both, uploads the release to the private deployment bucket, and
   deploys it through AWS Systems Manager.
 - Releases are extracted under `/opt/ai-product-finder/releases/<git-sha>`.
@@ -36,17 +36,6 @@ deployment role. SSH is deliberately not exposed.
   certificates are valid for 160 hours, so the same twice-daily renewal timer
   renews it automatically and reloads Nginx only after a successful renewal.
 
-Retrieve the generated shared access code only when needed:
-
-```powershell
-aws ssm get-parameter `
-  --region ap-south-1 `
-  --name /ai-product-finder/production/access-code `
-  --with-decryption `
-  --query Parameter.Value `
-  --output text
-```
-
 ## Initial provisioning
 
 Prerequisites:
@@ -64,61 +53,40 @@ from `Backend/.env.example`:
 ```dotenv
 NODE_ENV=production
 PORT=3000
+LOG_LEVEL=info
 APP_ORIGIN=https://samvad.space
-AI_PROVIDER=openrouter
-OPENROUTER_API_KEY=<primary-openrouter-generation-key>
-OPENROUTER_BACKUP_API_KEY=<backup-openrouter-generation-key>
-OPENROUTER_MODEL=z-ai/glm-5.2:free
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_SITE_URL=https://samvad.space
-OPENROUTER_APP_NAME=AI Product Finder
-VERCEL_GENERATION_FALLBACK_ENABLED=true
-VERCEL_AI_GATEWAY_MODEL=minimax/minimax-m3-free
-VERCEL_AI_GATEWAY_FALLBACK_MODELS=minimax/minimax-m2.7-free
-VERCEL_RESEARCH_MODEL=zai/glm-5.3-flash
+BEDROCK_API_KEY=<amazon-bedrock-api-key>
+BEDROCK_MODEL=deepseek.v3.2
+BEDROCK_REGION=ap-south-1
+BEDROCK_TIMEOUT_MS=120000
 CORPUS_ARTIFACT_DIR=/opt/ai-product-finder/current/artifacts
+CHAT_MAX_MESSAGE_CHARS=4000
+CHAT_MAX_PRODUCT_TURNS=20
+CHAT_MAX_HISTORY_TURNS=10
+CHAT_MAX_HISTORY_CHARS=20000
+DOCUMENT_FETCH_TIMEOUT_MS=15000
+DOCUMENT_CACHE_TTL_SECONDS=3600
+WS_MAX_PAYLOAD_BYTES=32768
+WS_HEARTBEAT_MS=30000
 ```
 
-Keep generation and embedding environment names explicit even when an operator chooses
-to place the same two OpenRouter credential values in both sets. Answer generation tries
-the primary OpenRouter key, the backup OpenRouter key, then Vercel. Vercel tries the two
-configured free models in order. The Vercel research model remains separate because the
-official-site research path depends on the gateway-only `vercel:perplexity_search` tool.
-Provider switching is allowed only before the first streamed answer delta; cancellation
-and malformed client requests never trigger a second provider attempt.
+The current simplified runtime uses one Bedrock OpenAI-compatible endpoint and has no
+OpenRouter, Vercel, embedding, lexical-index, web-research, or provider-failover settings.
+Each substantive request makes one bounded JSON selection call over the 979-product
+trimmed catalog and one streamed sales-answer call. The server validates returned FGMNs
+against the active corpus, fetches TDS HTML only for selected products, and exposes SDS
+as a stable official selector link without downloading or parsing SDS PDFs.
 
-Hybrid retrieval uses a versioned, pre-generated corpus so deployments do not
-recompute embeddings or silently replace vectors with a lexical-only release.
-To activate a newly generated vector release safely:
+During the first Bedrock deployment, the production SecureString may retain the removed
+OpenRouter/Vercel/authentication variables for one rollback window because the previously
+deployed release still requires them. The simplified runtime ignores unknown variables.
+Remove those legacy values only after the Bedrock release is verified and rollback to the
+pre-simplification release is no longer required.
 
-1. Select and benchmark an embedding model supported by the configured OpenAI-compatible
-   `/embeddings` endpoint.
-2. Configure `EMBEDDING_API_KEY` with the primary OpenRouter key and optionally
-   `EMBEDDING_BACKUP_API_KEY` with a separate OpenRouter key,
-   `EMBEDDING_BASE_URL=https://openrouter.ai/api/v1`,
-   `EMBEDDING_MODEL=google/gemini-embedding-2`, and `EMBEDDING_DIMENSIONS=768`
-   for both corpus ingestion and backend runtime. The reduced Matryoshka dimension
-   is supported and automatically normalized by Gemini.
-3. Run ingestion with `EMBEDDING_ENABLED=true`; activation is atomic and the resulting
-   manifest records the model, observed dimensions, format version, and chunk hashes.
-4. Run backend tests and the retrieval benchmark against the new release before deployment.
-5. Update `artifacts/.gitignore` to track only the new active release, commit that
-   release together with `artifacts/current.json`, and remove the previous release
-   exception when it is no longer needed for deployment.
-6. Add the embedding settings to the production SSM environment and enable the flag.
-
-The active release `20260902T172534143Z-7daaf5c5` was independently audited on
-2026-09-03: all 979 products have one matching chunk and one finite, nonzero,
-768-dimensional vector; source hash, chunk ID, FGMN, content hash, counts, and runtime
-loading all matched. Its vector artifact is complete. The overall corpus remains marked
-`partial` only because facet memberships and captured canonical links are unfinished.
-
-At query time, retryable network/timeout/provider failures, HTTP 401/403, 429, and 5xx
-responses from the primary embedding key are attempted once with the backup key. Invalid
-vector dimensions/content and model/configuration errors do not trigger key switching.
-Caller cancellation never triggers failover. If both keys fail, retrieval falls back to
-lexical results. A configured model or dimension mismatch with an embedded release is
-rejected during server creation rather than mixing incompatible vector spaces.
+The application currently has no access-code screen or cookie authentication. Nginx
+serves the public frontend, and WebSocket upgrades are protected by exact `APP_ORIGIN`
+validation. Reintroduce authentication before treating this as anything other than a
+public demonstration service.
 
 Create the parameter with the AWS-managed SSM encryption key. If a
 customer-managed KMS key is selected instead, grant the instance role
@@ -242,6 +210,12 @@ to backend logs.
 ## Known deployment limits
 
 - This is a single-instance MVP and has no automatic failover.
+- The application is publicly reachable and currently has no user authentication.
+- Generation has one Bedrock provider/key and no automatic model-provider failover.
+- Product selection sends all 979 trimmed catalog records to Bedrock on each substantive
+  turn; this is simple but increases tokens and selection latency.
+- Conversation context is process-memory-only and scoped to one WebSocket connection;
+  reconnecting starts a new backend conversation.
 - The active corpus remains a partial local snapshot until Phase B live
   ingestion and facet reconstruction are complete.
 - Scheduled ingestion is intentionally not enabled while ingestion only

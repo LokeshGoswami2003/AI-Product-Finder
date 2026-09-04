@@ -41,10 +41,9 @@ jobs:
           npm --prefix Backend test
           npm --prefix Frontend test
 
-      - name: Validate versioned vector corpus
+      - name: Validate catalog corpus
         run: |
-          node -e "const { loadActiveRelease } = require('./Backend/src/corpus/load-release'); loadActiveRelease('./artifacts').then(({ manifest, vectorSearch }) => { if (!vectorSearch || manifest.embeddings?.model !== 'google/gemini-embedding-2' || manifest.embeddings?.dimensions !== 768) throw new Error('The active Gemini vector corpus is missing or incompatible'); console.log('Validated vector corpus', manifest.releaseId); })"
-          npm --prefix Backend run benchmark:retrieval
+          node -e "const { loadActiveRelease } = require('./Backend/src/corpus/load-release'); loadActiveRelease('./artifacts').then(({ manifest, products }) => { if (!Array.isArray(products) || products.length === 0) throw new Error('The active catalog is missing'); console.log('Validated catalog', manifest.releaseId, products.length); })"
 
       - name: Lint frontend
         run: npm --prefix Frontend run lint
