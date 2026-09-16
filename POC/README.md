@@ -7,19 +7,21 @@ A standalone product-finder demo that runs entirely from local JSON. Runtime has
 - React/Vite chat UI
 - Node.js HTTP and WebSocket backend
 - 979-product catalog
-- 879 approved product answers
-- 6,879 approved question variants
-- Exact, product/FGMN, lexical, bounded-fuzzy, conversation-context, and safe no-match handling
+- 905 approved product answers
+- 6,983 approved question variants
+- 8 curated multi-turn sales conversations (26 question-and-answer steps) documented in [QA.md](QA.md)
+- Exact, product/FGMN, comparison, lexical, bounded-fuzzy, conversation-context, and safe no-match handling
 
 ## Requirements
 
 - Windows PowerShell
 - Node.js 20.6 or newer
 - npm
+- No API key, credential, or `.env` file
 
 ## Quick start
 
-Open PowerShell in this `POC` folder:
+Clone the repository, then open PowerShell in the `POC` folder:
 
 ```powershell
 .\start-demo.ps1
