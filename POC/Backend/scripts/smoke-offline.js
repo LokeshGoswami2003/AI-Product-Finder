@@ -89,6 +89,7 @@ async function main() {
     CHAT_MODE: "offline",
     CORPUS_ARTIFACT_DIR: artifactDir,
   });
+  assert.equal(config.CHAT_MAX_PRODUCT_TURNS, 3);
   const corpus = await loadActiveRelease(artifactDir);
   assert.ok(corpus.products.length > 0, "Active release has no products");
   assert.ok(

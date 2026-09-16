@@ -13,7 +13,7 @@ const envSchema = z.object({
   APP_ORIGIN: z.string().url().default("http://localhost:5173"),
   CORPUS_ARTIFACT_DIR: z.string().min(1).default("../artifacts"),
   CHAT_MAX_MESSAGE_CHARS: positiveInteger(4000),
-  CHAT_MAX_PRODUCT_TURNS: z.coerce.number().int().min(1).max(50).default(20),
+  CHAT_MAX_PRODUCT_TURNS: z.coerce.number().int().min(1).max(50).default(3),
   CHAT_MAX_HISTORY_TURNS: positiveInteger(10),
   CHAT_MAX_HISTORY_CHARS: positiveInteger(20000),
   WS_MAX_PAYLOAD_BYTES: positiveInteger(32768),

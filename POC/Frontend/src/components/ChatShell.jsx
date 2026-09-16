@@ -131,7 +131,7 @@ export function ChatShell() {
 
   const statusLabel =
     status === "connected"
-      ? "Ready"
+      ? "Connected"
       : ["connecting", "reconnecting"].includes(status)
         ? "Connecting"
         : "Connection unavailable";
@@ -275,7 +275,10 @@ export function ChatShell() {
                   role="status"
                   aria-live="polite"
                 >
-                  <span className="message-mark" aria-hidden="true">
+                  <span
+                    className="message-mark message-mark--thinking"
+                    aria-hidden="true"
+                  >
                     ✦
                   </span>
                   <span className="progress-bubble">
@@ -287,10 +290,11 @@ export function ChatShell() {
                           key={step}
                         >
                           {active ? (
-                            <span className="progress-dots" aria-hidden="true">
-                              <i />
-                              <i />
-                              <i />
+                            <span
+                              className="thinking-indicator"
+                              aria-hidden="true"
+                            >
+                              <i>✦</i>
                             </span>
                           ) : (
                             <span className="progress-check" aria-hidden="true">

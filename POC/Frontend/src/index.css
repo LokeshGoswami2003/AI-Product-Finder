@@ -507,6 +507,24 @@ a {
   letter-spacing: 0.02em;
 }
 
+.message-content--formatted .follow-up-heading {
+  margin-top: 0.15rem;
+  padding: 0.65rem 0.7rem 0;
+  border-left: 3px solid var(--eastman-cyan);
+  border-radius: 0.4rem 0.4rem 0 0;
+  color: var(--eastman-blue-dark);
+  background: #f1f9fb;
+}
+
+.message-content--formatted .follow-up-prompt {
+  margin-top: -0.55rem;
+  padding: 0.35rem 0.7rem 0.65rem;
+  border-left: 3px solid var(--eastman-cyan);
+  border-radius: 0 0 0.4rem 0.4rem;
+  color: #334a58;
+  background: #f1f9fb;
+}
+
 .message-content--formatted ul {
   display: grid;
   gap: 0.3rem;
@@ -656,41 +674,76 @@ a {
 .progress-step:not(.progress-step--active) {
   color: #73818a;
 }
+.progress-step--active > span:last-child {
+  color: var(--eastman-blue-dark);
+  background: linear-gradient(
+    90deg,
+    var(--eastman-blue-dark) 20%,
+    #50a6b8 48%,
+    var(--eastman-blue-dark) 76%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 2.2s linear infinite;
+}
 .progress-check {
   width: 1rem;
   color: var(--eastman-blue);
   font-size: 0.72rem;
   text-align: center;
 }
-.progress-dots {
-  display: flex;
-  gap: 0.22rem;
-  width: 1rem;
+.thinking-indicator {
+  position: relative;
+  display: grid;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--eastman-blue);
 }
-.progress-dots i {
-  width: 0.35rem;
-  height: 0.35rem;
+.thinking-indicator::before {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid rgba(0, 95, 158, 0.2);
+  border-top-color: var(--eastman-blue);
   border-radius: 50%;
-  background: #78868f;
-  animation: thinking 1.2s infinite ease-in-out;
+  content: "";
+  animation: thinking-spin 1.25s linear infinite;
 }
-.progress-dots i:nth-child(2) {
-  animation-delay: 150ms;
+.thinking-indicator i {
+  font-size: 0.48rem;
+  font-style: normal;
+  animation: thinking-spark 1.25s ease-in-out infinite;
 }
-.progress-dots i:nth-child(3) {
-  animation-delay: 300ms;
+.message-mark--thinking {
+  animation: thinking-breathe 1.8s ease-in-out infinite;
 }
 
-@keyframes thinking {
-  0%,
-  60%,
-  100% {
-    opacity: 0.3;
-    transform: translateY(0);
+@keyframes thinking-spin {
+  to {
+    transform: rotate(360deg);
   }
-  30% {
-    opacity: 1;
-    transform: translateY(-2px);
+}
+
+@keyframes thinking-spark {
+  50% {
+    opacity: 0.5;
+    transform: scale(0.78) rotate(20deg);
+  }
+}
+
+@keyframes thinking-breathe {
+  50% {
+    box-shadow: 0 0 0 0.28rem rgba(164, 220, 229, 0.2);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes thinking-shimmer {
+  to {
+    background-position: -220% 0;
   }
 }
 

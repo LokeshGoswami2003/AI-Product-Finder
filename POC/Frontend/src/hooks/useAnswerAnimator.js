@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef } from "react";
 
-const INITIAL_DELAY_MS = 550;
-const CHUNK_DELAY_MS = 28;
-const TARGET_CHUNK_LENGTH = 14;
+export const ANSWER_INITIAL_DELAY_MS = 850;
+export const ANSWER_CHUNK_DELAY_MS = 65;
+const TARGET_CHUNK_LENGTH = 10;
+
+export function answerChunkDelay(chunk = "") {
+  if (/[.!?]\s*$/.test(chunk)) return 150;
+  if (/[,;:]\s*$/.test(chunk)) return 95;
+  return ANSWER_CHUNK_DELAY_MS;
+}
 
 export function chunkAnswerText(text) {
   const parts = String(text || "").match(/\S+\s*/g) || [];
@@ -51,7 +57,7 @@ export function useAnswerAnimator(dispatch) {
   }, [dispatch]);
 
   const schedule = useCallback(
-    function scheduleNext(delay = CHUNK_DELAY_MS) {
+    function scheduleNext(delay = ANSWER_CHUNK_DELAY_MS) {
       const animation = stateRef.current;
       if (!animation || animation.timer) return;
       animation.timer = window.setTimeout(() => {
@@ -65,7 +71,7 @@ export function useAnswerAnimator(dispatch) {
             requestId: current.requestId,
             delta: chunk,
           });
-          scheduleNext();
+          scheduleNext(answerChunkDelay(chunk));
         } else {
           finish();
         }
@@ -100,7 +106,7 @@ export function useAnswerAnimator(dispatch) {
       if (!animation.started) {
         animation.started = true;
         dispatch({ type: "request.progress", stage: "composing" });
-        schedule(INITIAL_DELAY_MS);
+        schedule(ANSWER_INITIAL_DELAY_MS);
       } else {
         schedule();
       }
@@ -126,7 +132,9 @@ export function useAnswerAnimator(dispatch) {
     (requestId, event) => {
       const animation = ensure(requestId);
       animation.done = event;
-      schedule(animation.started ? CHUNK_DELAY_MS : INITIAL_DELAY_MS);
+      schedule(
+        animation.started ? ANSWER_CHUNK_DELAY_MS : ANSWER_INITIAL_DELAY_MS,
+      );
     },
     [ensure, schedule],
   );

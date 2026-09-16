@@ -3,7 +3,12 @@ import test from "node:test";
 
 import { chatReducer, initialChatState } from "../src/state/chat.js";
 import { safeEastmanUrl } from "../src/protocol/links.js";
-import { chunkAnswerText } from "../src/hooks/useAnswerAnimator.js";
+import {
+  ANSWER_CHUNK_DELAY_MS,
+  ANSWER_INITIAL_DELAY_MS,
+  answerChunkDelay,
+  chunkAnswerText,
+} from "../src/hooks/useAnswerAnimator.js";
 
 test("chat reducer accumulates answer deltas and structured results", () => {
   let state = chatReducer(initialChatState, {
@@ -80,6 +85,13 @@ test("answer animation chunks preserve the complete response", () => {
 
   assert.ok(chunks.length > 1);
   assert.equal(chunks.join(""), answer);
+});
+
+test("answer animation uses a readable cadence with natural pauses", () => {
+  assert.ok(ANSWER_INITIAL_DELAY_MS >= 800);
+  assert.ok(ANSWER_CHUNK_DELAY_MS >= 60);
+  assert.ok(answerChunkDelay("sentence. ") > answerChunkDelay("sentence "));
+  assert.ok(answerChunkDelay("phrase, ") > answerChunkDelay("phrase "));
 });
 
 test("server snapshots restore conversation context and answer completion updates quota", () => {
