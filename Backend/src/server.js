@@ -5,6 +5,7 @@ const { createApp } = require("./app");
 const { ConversationStore } = require("./chat/conversation-store");
 const { BedrockClient } = require("./bedrock/client");
 const { ChatOrchestrator } = require("./chat/orchestrator");
+const { OfflineChatOrchestrator } = require("./chat/offline-orchestrator");
 const { loadActiveRelease } = require("./corpus/load-release");
 const { parseEnv } = require("./config/env");
 const { createLogger } = require("./config/logger");
@@ -66,18 +67,28 @@ async function createServer({
   const server = http.createServer(app);
 
   if (corpus) {
-    const client = modelClient || createGenerationClient(config, logger);
-    const documentClient = new EastmanDocumentClient({
-      timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,
-      cacheTtlMs: config.DOCUMENT_CACHE_TTL_SECONDS * 1000,
-      logger,
-    });
-    const orchestrator = new ChatOrchestrator({
-      products: corpus.products,
-      documentClient,
-      modelClient: client,
-      logger,
-    });
+    let orchestrator;
+    if (config.CHAT_MODE === "bedrock") {
+      const client = modelClient || createGenerationClient(config, logger);
+      const documentClient = new EastmanDocumentClient({
+        timeoutMs: config.DOCUMENT_FETCH_TIMEOUT_MS,
+        cacheTtlMs: config.DOCUMENT_CACHE_TTL_SECONDS * 1000,
+        logger,
+      });
+      orchestrator = new ChatOrchestrator({
+        products: corpus.products,
+        documentClient,
+        modelClient: client,
+        logger,
+      });
+    } else {
+      orchestrator = new OfflineChatOrchestrator({
+        products: corpus.products,
+        answers: corpus.answers,
+        questions: corpus.questions,
+        logger,
+      });
+    }
     attachChatWebSocket({
       server,
       config,
@@ -98,8 +109,10 @@ async function start() {
     env: config.NODE_ENV,
     port: config.PORT,
     origin: config.APP_ORIGIN,
-    model: config.BEDROCK_MODEL,
-    region: config.BEDROCK_REGION,
+    chatMode: config.CHAT_MODE,
+    ...(config.CHAT_MODE === "bedrock"
+      ? { model: config.BEDROCK_MODEL, region: config.BEDROCK_REGION }
+      : {}),
   });
   const { server } = await createServer({ config, logger });
   server.listen(config.PORT, "127.0.0.1", () => {

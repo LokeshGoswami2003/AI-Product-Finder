@@ -107,6 +107,7 @@ function updateAnswer(state, requestId, values) {
 function progressLabel(stage) {
   const labels = {
     retrieving: "Searching the Eastman catalog…",
+    matching: "Matching approved offline answers…",
     grounding: "Reviewing product information…",
     generating: "Preparing your answer…",
   };

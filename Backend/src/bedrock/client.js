@@ -1,12 +1,26 @@
 const { createLogger } = require("../config/logger");
 
 class BedrockError extends Error {
-  constructor(message, { status = null, code = null } = {}) {
+  constructor(
+    message,
+    { status = null, code = null, retryAfterMs = null } = {},
+  ) {
     super(message);
     this.name = "BedrockError";
     this.status = status;
     this.code = code;
+    this.retryAfterMs = retryAfterMs;
   }
+}
+
+function parseRetryAfter(value, now = Date.now()) {
+  if (typeof value !== "string" || value.trim() === "") return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.ceil(seconds * 1000);
+  }
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? Math.max(0, timestamp - now) : null;
 }
 
 function defaultBaseUrl(region) {
@@ -62,6 +76,7 @@ class BedrockClient {
       {
         status: response.status,
         code: body?.error?.code || null,
+        retryAfterMs: parseRetryAfter(response.headers?.get?.("retry-after")),
       },
     );
   }
@@ -261,4 +276,9 @@ class BedrockClient {
   }
 }
 
-module.exports = { BedrockClient, BedrockError, defaultBaseUrl };
+module.exports = {
+  BedrockClient,
+  BedrockError,
+  defaultBaseUrl,
+  parseRetryAfter,
+};

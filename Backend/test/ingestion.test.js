@@ -7,6 +7,7 @@ const test = require("node:test");
 const { buildCatalogRelease } = require("../src/corpus/artifacts");
 const { catalogSchema } = require("../src/corpus/catalog-schema");
 const { loadActiveRelease } = require("../src/corpus/load-release");
+const { validateOfflineReferences } = require("../src/corpus/load-release");
 const {
   fallbackSlug,
   normalizeCatalog,
@@ -55,4 +56,24 @@ test("local ingestion atomically creates and activates a catalog release", async
   assert.equal(result.report.status, "ready");
   assert.equal(release.products[0].documents.hasTds, true);
   assert.equal(release.products.length, 1);
+  assert.deepEqual(release.answers, []);
+  assert.deepEqual(release.questions, []);
+});
+
+test("offline records reject unknown answer references", () => {
+  assert.throws(
+    () =>
+      validateOfflineReferences(
+        [{ fgmn: "71103853" }],
+        [],
+        [
+          {
+            questionId: "question-1",
+            answerId: "missing-answer",
+            text: "Tell me about AdapT 100",
+          },
+        ],
+      ),
+    /unknown answer/i,
+  );
 });

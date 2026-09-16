@@ -42,6 +42,15 @@ test("clearing chat removes conversation and active request state", () => {
   );
 });
 
+test("offline matching progress is presented explicitly", () => {
+  const state = chatReducer(initialChatState, {
+    type: "request.progress",
+    stage: "matching",
+  });
+
+  assert.equal(state.progress, "Matching approved offline answers…");
+});
+
 test("server snapshots restore conversation context and answer completion updates quota", () => {
   const quota = {
     maxProductTurns: 3,

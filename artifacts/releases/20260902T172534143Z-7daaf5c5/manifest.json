@@ -13,6 +13,8 @@
     "memberships": "memberships.json",
     "chunks": "chunks.jsonl",
     "embeddings": "embeddings.jsonl",
+    "answers": "answers.jsonl",
+    "questions": "questions.jsonl",
     "report": "report.json"
   },
   "embeddings": {

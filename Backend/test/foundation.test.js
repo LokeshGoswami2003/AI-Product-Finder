@@ -16,6 +16,7 @@ test("environment schema applies safe defaults", () => {
 
   assert.equal(env.PORT, 3000);
   assert.equal(env.LOG_LEVEL, "debug");
+  assert.equal(env.CHAT_MODE, "offline");
   assert.equal(env.BEDROCK_MODEL, "deepseek.v3.2");
   assert.equal(env.BEDROCK_REGION, "ap-south-1");
   assert.equal(env.BEDROCK_TIMEOUT_MS, 120000);
@@ -30,10 +31,14 @@ test("environment schema defaults LOG_LEVEL from NODE_ENV", () => {
   );
 });
 
-test("environment schema rejects a missing Bedrock API key", () => {
+test("environment schema requires a Bedrock API key only in Bedrock mode", () => {
   const { BEDROCK_API_KEY, ...withoutBedrockKey } = validEnv;
 
-  assert.throws(() => parseEnv(withoutBedrockKey), /BEDROCK_API_KEY/i);
+  assert.equal(parseEnv(withoutBedrockKey).CHAT_MODE, "offline");
+  assert.throws(
+    () => parseEnv({ ...withoutBedrockKey, CHAT_MODE: "bedrock" }),
+    /BEDROCK_API_KEY/i,
+  );
 });
 
 test("client protocol parses chat requests and rejects unknown fields", () => {

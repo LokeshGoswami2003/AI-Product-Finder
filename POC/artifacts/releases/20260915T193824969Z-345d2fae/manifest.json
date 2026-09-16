@@ -1,0 +1,27 @@
+{
+  "releaseId": "20260915T193824969Z-345d2fae",
+  "createdAt": "2026-09-15T19:38:24.969Z",
+  "schemaVersion": 1,
+  "parserVersion": 1,
+  "source": {
+    "path": "productfinder.json",
+    "sha256": "7daaf5c530ff17c3a911e7b1050184f1400a47aad127fd77b78cfd1579622fa4"
+  },
+  "files": {
+    "products": "products.json",
+    "answers": "answers.jsonl",
+    "questions": "questions.jsonl",
+    "report": "report.json"
+  },
+  "offline": {
+    "formatVersion": 1,
+    "baseReleaseId": "20260902T172534143Z-7daaf5c5",
+    "decisionsSha256": "e71bef386aeed711fdc8be16bb16cc910b1de71cdf85d06c32d41885bb74e029",
+    "fileSha256": {
+      "products.json": "0c52167245608e799a6a3de13a2543d448040bd8aaa15e3acd525061287ca990",
+      "answers.jsonl": "d02ad8327e7e398a72b657cf37a25a460c318b3ed311b697823a5c313faf4c32",
+      "questions.jsonl": "388b0486e48766b97b051fc18acfdd358e4cecc25ff801fb93e72109aad57ec7",
+      "report.json": "af6e2ec48a512078f41b6bad014d2074f3a2a2d7944ea410922e0fb20ba93280"
+    }
+  }
+}

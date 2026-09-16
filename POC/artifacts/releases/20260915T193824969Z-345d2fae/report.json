@@ -1,0 +1,18 @@
+{
+  "status": "ready",
+  "productCount": 979,
+  "offlineAnswerStatus": "reviewed",
+  "approvedAnswerCount": 879,
+  "approvedQuestionCount": 6879,
+  "warnings": [
+    "Canonical product links are generated fallbacks until captured and validated from Eastman.",
+    "Products without an approved generated answer use deterministic catalog fallback answers.",
+    "This release is intended for proof-of-concept demonstrations, not production guidance."
+  ],
+  "reviewPromotion": {
+    "baseReleaseId": "20260902T172534143Z-7daaf5c5",
+    "approvedCount": 879,
+    "rejectedCount": 99,
+    "replacedCount": 1
+  }
+}

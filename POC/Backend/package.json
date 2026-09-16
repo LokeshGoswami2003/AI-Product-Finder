@@ -1,0 +1,22 @@
+{
+  "name": "ai-product-finder-offline-poc-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal offline API and WebSocket backend for the AI Product Finder POC",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "smoke": "node scripts/smoke-offline.js",
+    "check:responses": "node scripts/check-responses.js"
+  },
+  "engines": {
+    "node": ">=20.6"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "minisearch": "^7.2.0",
+    "ws": "^8.18.3",
+    "zod": "^4.5.4"
+  }
+}

@@ -1,7 +1,11 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { BedrockClient, BedrockError } = require("../src/bedrock/client");
+const {
+  BedrockClient,
+  BedrockError,
+  parseRetryAfter,
+} = require("../src/bedrock/client");
 
 test("Bedrock client uses the OpenAI-compatible DeepSeek endpoint", async () => {
   let request;
@@ -51,6 +55,31 @@ test("Bedrock client reports HTTP failures as BedrockError", async () => {
   );
 });
 
+test("Bedrock client preserves provider retry timing", async () => {
+  const client = new BedrockClient({
+    apiKey: "bedrock-key",
+    fetchImpl: async () => ({
+      ok: false,
+      status: 429,
+      headers: { get: (name) => (name === "retry-after" ? "2.5" : null) },
+      json: async () => ({ error: { message: "slow down" } }),
+    }),
+  });
+
+  await assert.rejects(
+    () =>
+      client.createChatCompletion({
+        messages: [{ role: "user", content: "Hello" }],
+      }),
+    (error) =>
+      error instanceof BedrockError &&
+      error.status === 429 &&
+      error.retryAfterMs === 2500,
+  );
+  assert.equal(parseRetryAfter("3"), 3000);
+  assert.equal(parseRetryAfter("invalid"), null);
+});
+
 test("Bedrock client streams text deltas", async () => {
   const encoder = new TextEncoder();
   const client = new BedrockClient({
@@ -58,8 +87,12 @@ test("Bedrock client streams text deltas", async () => {
     fetchImpl: async () => ({
       ok: true,
       body: (async function* () {
-        yield encoder.encode('data: {"choices":[{"delta":{"content":"Hi "}}]}\n\n');
-        yield encoder.encode('data: {"choices":[{"delta":{"content":"there"}}]}\n\n');
+        yield encoder.encode(
+          'data: {"choices":[{"delta":{"content":"Hi "}}]}\n\n',
+        );
+        yield encoder.encode(
+          'data: {"choices":[{"delta":{"content":"there"}}]}\n\n',
+        );
         yield encoder.encode("data: [DONE]\n\n");
       })(),
     }),

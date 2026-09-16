@@ -8,12 +8,20 @@
     "start": "node --env-file-if-exists=.env index.js",
     "dev": "nodemon --exec \"node --env-file-if-exists=.env\" index.js",
     "test": "node --test",
-    "ingest": "node --env-file-if-exists=.env scripts/ingest-local.js"
+    "ingest": "node --env-file-if-exists=.env scripts/ingest-local.js",
+    "generate:plan": "node --env-file-if-exists=.env scripts/generate-corpus.js --dry-run",
+    "generate": "node --env-file-if-exists=.env scripts/generate-corpus.js",
+    "review:export": "node scripts/review-corpus.js export",
+    "review:poc": "node scripts/review-corpus.js poc-review --confirm-poc --reviewer=poc-automated-review",
+    "review:check": "node scripts/review-corpus.js publish --dry-run",
+    "review:publish": "node scripts/review-corpus.js publish",
+    "smoke:offline": "node scripts/smoke-offline.js"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
+    "minisearch": "^7.2.0",
     "ws": "^8.18.3",
     "zod": "^4.5.4"
   },

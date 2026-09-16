@@ -55,33 +55,31 @@ NODE_ENV=production
 PORT=3000
 LOG_LEVEL=info
 APP_ORIGIN=https://samvad.space
-BEDROCK_API_KEY=<amazon-bedrock-api-key>
-BEDROCK_MODEL=deepseek.v3.2
-BEDROCK_REGION=ap-south-1
-BEDROCK_TIMEOUT_MS=120000
+CHAT_MODE=offline
 CORPUS_ARTIFACT_DIR=/opt/ai-product-finder/current/artifacts
 CHAT_MAX_MESSAGE_CHARS=4000
 CHAT_MAX_PRODUCT_TURNS=20
 CHAT_MAX_HISTORY_TURNS=10
 CHAT_MAX_HISTORY_CHARS=20000
-DOCUMENT_FETCH_TIMEOUT_MS=15000
-DOCUMENT_CACHE_TTL_SECONDS=3600
 WS_MAX_PAYLOAD_BYTES=32768
 WS_HEARTBEAT_MS=30000
 ```
 
-The current simplified runtime uses one Bedrock OpenAI-compatible endpoint and has no
-OpenRouter, Vercel, embedding, lexical-index, web-research, or provider-failover settings.
-Each substantive request makes one bounded JSON selection call over the 979-product
-trimmed catalog and one streamed sales-answer call. The server validates returned FGMNs
-against the active corpus, fetches TDS HTML only for selected products, and exposes SDS
-as a stable official selector link without downloading or parsing SDS PDFs.
+The default runtime is completely offline. It loads approved Q&A records and the frozen
+979-product catalog from the active artifact release, then performs exact, lexical, and
+bounded fuzzy matching locally. It does not require model credentials and does not fetch
+product documents while answering a request.
 
-During the first Bedrock deployment, the production SecureString may retain the removed
+`CHAT_MODE=bedrock` is retained temporarily for migration and rollback. That mode also
+requires `BEDROCK_API_KEY`; its model, region, timeout, and document-cache variables use
+the defaults documented in `Backend/sampel.env` unless overridden. Do not enable it for
+the offline POC.
+
+During the first offline deployment, the production SecureString may retain the removed
 OpenRouter/Vercel/authentication variables for one rollback window because the previously
 deployed release still requires them. The simplified runtime ignores unknown variables.
-Remove those legacy values only after the Bedrock release is verified and rollback to the
-pre-simplification release is no longer required.
+Remove legacy provider values only after the offline release is verified and rollback to
+the previous release is no longer required.
 
 The application currently has no access-code screen or cookie authentication. Nginx
 serves the public frontend, and WebSocket upgrades are protected by exact `APP_ORIGIN`
