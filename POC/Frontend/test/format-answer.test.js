@@ -28,3 +28,22 @@ test("next-step headings use a friendlier conversational label", () => {
   assert.equal(presentAnswerHeading("NEXT STEP"), "Keep exploring");
   assert.equal(presentAnswerHeading("Why it fits"), "Why it fits");
 });
+
+test("technical comparison tables parse into head and body rows", () => {
+  const blocks = parseAnswerBlocks(
+    "### Put them side by side\n| Property | Test method |\n| --- | --- |\n| Notched Izod impact | ASTM D256 |\n| Heat deflection temperature | ASTM D648 |\n\nConfirm the values in each TDS.",
+  );
+
+  assert.deepEqual(blocks, [
+    { type: "heading", text: "Put them side by side" },
+    {
+      type: "table",
+      head: ["Property", "Test method"],
+      body: [
+        ["Notched Izod impact", "ASTM D256"],
+        ["Heat deflection temperature", "ASTM D648"],
+      ],
+    },
+    { type: "paragraph", text: "Confirm the values in each TDS." },
+  ]);
+});

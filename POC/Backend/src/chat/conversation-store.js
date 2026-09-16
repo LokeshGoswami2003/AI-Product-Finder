@@ -38,8 +38,8 @@ function boundedMessages(messages, maxEntries, maxChars) {
 
 class ConversationStore {
   constructor({
-    maxProductTurns = 3,
-    maxHistoryTurns = 10,
+    maxProductTurns = 12,
+    maxHistoryTurns = 12,
     maxHistoryChars = 20_000,
     now = Date.now,
   } = {}) {

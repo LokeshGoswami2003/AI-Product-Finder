@@ -5,9 +5,9 @@ export const initialChatState = {
   progressTrail: [],
   error: null,
   quota: {
-    maxProductTurns: 3,
+    maxProductTurns: 12,
     usedProductTurns: 0,
-    remainingProductTurns: 3,
+    remainingProductTurns: 12,
     limitReached: false,
   },
 };

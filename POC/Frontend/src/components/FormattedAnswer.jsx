@@ -43,6 +43,34 @@ export function FormattedAnswer({ content }) {
             </ul>
           );
         }
+        if (block.type === "table") {
+          return (
+            <div className="answer-table-wrap" key={`${block.type}-${index}`}>
+              <table className="answer-table">
+                <thead>
+                  <tr>
+                    {block.head.map((cell, cellIndex) => (
+                      <th key={`${cell}-${cellIndex}`} scope="col">
+                        {renderInlineText(cell)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.body.map((row, rowIndex) => (
+                    <tr key={`row-${rowIndex}`}>
+                      {row.map((cell, cellIndex) => (
+                        <td key={`${cell}-${cellIndex}`}>
+                          {renderInlineText(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
         return (
           <p
             className={followsNextStep ? "follow-up-prompt" : undefined}

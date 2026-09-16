@@ -2,6 +2,7 @@ export function parseAnswerBlocks(content) {
   const blocks = [];
   let paragraph = [];
   let bullets = [];
+  let tableRows = [];
 
   const flushParagraph = () => {
     if (paragraph.length > 0) {
@@ -15,14 +16,37 @@ export function parseAnswerBlocks(content) {
       bullets = [];
     }
   };
+  const flushTable = () => {
+    if (tableRows.length > 0) {
+      const [head, ...body] = tableRows;
+      blocks.push({ type: "table", head, body });
+      tableRows = [];
+    }
+  };
 
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) {
       flushParagraph();
       flushBullets();
+      flushTable();
       continue;
     }
+
+    if (line.startsWith("|") && line.endsWith("|")) {
+      flushParagraph();
+      flushBullets();
+      const cells = line
+        .slice(1, -1)
+        .split("|")
+        .map((cell) => cell.trim());
+      // The dashed separator row carries no content.
+      if (!cells.every((cell) => /^:?-{2,}:?$/.test(cell))) {
+        tableRows.push(cells);
+      }
+      continue;
+    }
+    flushTable();
 
     const heading = line.match(/^#{1,3}\s+(.+)$/);
     if (heading) {
@@ -45,6 +69,7 @@ export function parseAnswerBlocks(content) {
 
   flushParagraph();
   flushBullets();
+  flushTable();
   return blocks;
 }
 

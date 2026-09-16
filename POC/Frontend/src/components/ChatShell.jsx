@@ -9,9 +9,9 @@ import { chatReducer, initialChatState } from "../state/chat";
 import { safeEastmanUrl } from "../protocol/links";
 
 const STARTERS = [
-  "I need selective H2S removal",
-  "What is AdapT 100?",
-  "Compare AdapT 100 and AdapT 201",
+  "I need a BPA-free clear plastic for protective barriers",
+  "I'm developing eyewear frames and need an optical grade polymer",
+  "Compare Eastman Eastek 4100 and Eastek 4500",
 ];
 
 export function ChatShell() {

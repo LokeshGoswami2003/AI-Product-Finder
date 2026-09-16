@@ -137,7 +137,7 @@ class OfflineRetriever {
     };
   }
 
-  searchQuestions(normalized) {
+  searchQuestions(normalized, { restrictFgmns = null } = {}) {
     if (this.questionIndex.documentCount === 0) return null;
     const results = this.questionIndex.search(normalized, {
       combineWith: "AND",
@@ -145,6 +145,21 @@ class OfflineRetriever {
       prefix: false,
     });
     if (results.length === 0) return null;
+    if (restrictFgmns) {
+      const wanted = new Set(restrictFgmns.map(String));
+      const scoped = results.find((result) => {
+        const answer = this.answersById.get(result.answerId);
+        return (
+          result.score >= 1.5 &&
+          answer?.fgmns.some((fgmn) => wanted.has(String(fgmn)))
+        );
+      });
+      if (!scoped) return null;
+      return this.answerRecord(
+        this.answersById.get(scoped.answerId),
+        "context",
+      );
+    }
     const first = results[0];
     const second = results[1];
     if (first.score < 2 || (second && first.score < second.score * 1.15)) {
@@ -152,6 +167,16 @@ class OfflineRetriever {
     }
     const answer = this.answersById.get(first.answerId);
     return answer ? this.answerRecord(answer, "lexical") : null;
+  }
+
+  authoredAnswerFor(fgmns, intents) {
+    const wanted = new Set(fgmns.map(String));
+    return [...this.answersById.values()].find(
+      (answer) =>
+        intents.includes(answer.intent) &&
+        answer.fgmns.length === wanted.size &&
+        answer.fgmns.every((fgmn) => wanted.has(String(fgmn))),
+    );
   }
 
   searchProducts(message) {
@@ -184,11 +209,9 @@ class OfflineRetriever {
     const explicitProducts = this.explicitProducts(message);
     if (explicitProducts.length === 1) {
       const product = explicitProducts[0];
-      const authored = [...this.answersById.values()].find(
-        (answer) =>
-          answer.fgmns.length === 1 &&
-          String(answer.fgmns[0]) === String(product.fgmn) &&
-          answer.intent === "product_overview",
+      const authored = this.authoredAnswerFor(
+        [product.fgmn],
+        ["product_overview", "application_fit"],
       );
       return authored
         ? this.answerRecord(authored, "entity")
@@ -199,6 +222,11 @@ class OfflineRetriever {
           };
     }
     if (explicitProducts.length > 1) {
+      const comparison = this.authoredAnswerFor(
+        explicitProducts.map((product) => product.fgmn),
+        ["product_comparison"],
+      );
+      if (comparison) return this.answerRecord(comparison, "comparison");
       return {
         text: `I found multiple named products: ${explicitProducts.map((product) => product.displayName).join(", ")}. Please ask about one product at a time while comparison answers are being added to the offline corpus.`,
         outcome: "clarification",
@@ -207,6 +235,12 @@ class OfflineRetriever {
     }
 
     const recentFgmns = retrievalContext.recentProductFgmns || [];
+    if (recentFgmns.length > 0) {
+      const scoped = this.searchQuestions(normalized, {
+        restrictFgmns: recentFgmns,
+      });
+      if (scoped) return scoped;
+    }
     if (FOLLOW_UP_PATTERN.test(message) && recentFgmns.length === 1) {
       const product = this.productsByFgmn.get(String(recentFgmns[0]));
       if (product) {

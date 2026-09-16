@@ -1,0 +1,28 @@
+{
+  "releaseId": "20260916T182645806Z-demoflows",
+  "createdAt": "2026-09-16T18:26:45.836Z",
+  "schemaVersion": 1,
+  "parserVersion": 1,
+  "source": {
+    "path": "productfinder.json",
+    "sha256": "7daaf5c530ff17c3a911e7b1050184f1400a47aad127fd77b78cfd1579622fa4"
+  },
+  "files": {
+    "products": "products.json",
+    "answers": "answers.jsonl",
+    "questions": "questions.jsonl",
+    "report": "report.json"
+  },
+  "offline": {
+    "formatVersion": 1,
+    "baseReleaseId": "20260916T182326568Z-demoflows",
+    "decisionsSha256": "e71bef386aeed711fdc8be16bb16cc910b1de71cdf85d06c32d41885bb74e029",
+    "fileSha256": {
+      "products.json": "0c52167245608e799a6a3de13a2543d448040bd8aaa15e3acd525061287ca990",
+      "answers.jsonl": "6f70b2d83943a64d5c97ef9f6a4993c88b6032e6a2bbcc8c5a8ec27a07ea17f7",
+      "questions.jsonl": "e1d6b5f585fb8ca735a19a2f50168e127dc75c81ae2cbdabf3c1c4c10c31a84b",
+      "report.json": "889807010018f7ddf3efc28ae68a8d2434a1bd4b94d56aafe90c58c858d8dec8"
+    },
+    "curatedFlows": 8
+  }
+}

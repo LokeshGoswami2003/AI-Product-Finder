@@ -535,6 +535,36 @@ a {
   color: var(--eastman-blue);
 }
 
+.answer-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #dde5ea;
+  border-radius: 0.45rem;
+}
+
+.answer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.answer-table th,
+.answer-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #e8eef2;
+  text-align: left;
+  vertical-align: top;
+}
+
+.answer-table th {
+  color: var(--eastman-blue-dark);
+  background: #f1f9fb;
+  font-weight: 600;
+}
+
+.answer-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .message--streaming .message-content--formatted::after {
   width: 0.42rem;
   height: 0.9rem;

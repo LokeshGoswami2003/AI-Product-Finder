@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "smoke": "node scripts/smoke-offline.js",
-    "check:responses": "node scripts/check-responses.js"
+    "check:responses": "node scripts/check-responses.js",
+    "build:flows": "node scripts/build-demo-flows.js",
+    "check:flows": "node scripts/check-demo-flows.js"
   },
   "engines": {
     "node": ">=20.6"

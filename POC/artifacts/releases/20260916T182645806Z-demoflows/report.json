@@ -1,0 +1,74 @@
+{
+  "status": "ready",
+  "productCount": 979,
+  "offlineAnswerStatus": "reviewed",
+  "approvedAnswerCount": 905,
+  "approvedQuestionCount": 6983,
+  "warnings": [
+    "Canonical product links are generated fallbacks until captured and validated from Eastman.",
+    "Products without an approved generated answer use deterministic catalog fallback answers.",
+    "This release is intended for proof-of-concept demonstrations, not production guidance."
+  ],
+  "reviewPromotion": {
+    "baseReleaseId": "20260902T172534143Z-7daaf5c5",
+    "approvedCount": 879,
+    "rejectedCount": 99,
+    "replacedCount": 1
+  },
+  "curatedDemoFlows": {
+    "flowCount": 8,
+    "stepCount": 26,
+    "questionVariantCount": 104,
+    "displacedGeneratedQuestions": 104,
+    "flows": [
+      {
+        "flowId": "bpa-free-barriers",
+        "title": "BPA-free clear protective barriers",
+        "persona": "Fabricator sourcing heavy-gauge clear sheet for hygiene barriers",
+        "steps": 4
+      },
+      {
+        "flowId": "eyewear-optical",
+        "title": "Eyewear frames and optical parts",
+        "persona": "Eyewear brand product engineer selecting an optical-grade polymer",
+        "steps": 4
+      },
+      {
+        "flowId": "paint-protection-film",
+        "title": "Automotive paint protection film",
+        "persona": "Automotive accessories buyer sourcing PPF",
+        "steps": 3
+      },
+      {
+        "flowId": "pu-hot-melt-adhesive",
+        "title": "Reactive polyurethane hot melt adhesive",
+        "persona": "Adhesive formulator developing a PUR hot melt",
+        "steps": 4
+      },
+      {
+        "flowId": "waterborne-adhesive-plasticizer",
+        "title": "Water-based and PVAc adhesive plasticizers",
+        "persona": "Adhesive formulator working on PVAc and PVC systems",
+        "steps": 3
+      },
+      {
+        "flowId": "medical-device-molding",
+        "title": "Medical device moulding",
+        "persona": "Medical device engineer selecting a biocompatible clear polymer",
+        "steps": 3
+      },
+      {
+        "flowId": "recyclable-cosmetics-packaging",
+        "title": "Recyclable cosmetics packaging",
+        "persona": "Beauty brand packaging developer with a recyclability mandate",
+        "steps": 3
+      },
+      {
+        "flowId": "commercial-handoff",
+        "title": "Samples, pricing, and representative handoff",
+        "persona": "Any buyer ready to convert",
+        "steps": 2
+      }
+    ]
+  }
+}
